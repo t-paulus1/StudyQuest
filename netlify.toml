@@ -1,0 +1,16 @@
+[build]
+  command = "mkdir -p dist/vendor && cp index.html salle3d.js iles3d.js dist/ && cp -r node_modules/three/build dist/vendor/three"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/api/generer"
+  to = "/.netlify/functions/generer-background"
+  status = 200
+
+[[redirects]]
+  from = "/api/resultat"
+  to = "/.netlify/functions/resultat"
+  status = 200

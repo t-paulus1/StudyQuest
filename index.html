@@ -1,0 +1,1790 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyQuest</title>
+  <meta name="theme-color" content="#14102b">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
+  <style>
+    :root {
+      --fond: #14102b;
+      --carte: #2a2255;
+      --accent: #ffd166;
+      --doux: #cfc8ff;
+      --bon: #1e8449;
+      --mauvais: #922b21;
+    }
+    body[data-mode="enquete"]   { --fond: #0d1b2a; --carte: #1b2f45; --accent: #f4a736; --doux: #a9c2da; }
+    body[data-mode="aventure"]  { --fond: #14281a; --carte: #284a30; --accent: #9be564; --doux: #bfe3b4; }
+    body[data-mode="survie"]    { --fond: #2b1612; --carte: #4a2a20; --accent: #ff8c42; --doux: #f1c7a8; }
+    body[data-mode="strategie"] { --fond: #1b1840; --carte: #2d2a63; --accent: #6ec6ff; --doux: #c3c9ff; }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at 50% 0%, var(--carte) 0%, var(--fond) 60%);
+      background-attachment: fixed;
+      color: white;
+      min-height: 100vh;
+      transition: background 0.6s;
+    }
+
+    /* petites étoiles qui bougent doucement */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.6;
+      background-image:
+        radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.6), transparent),
+        radial-gradient(2px 2px at 120px 80px, rgba(255,255,255,0.5), transparent),
+        radial-gradient(1.5px 1.5px at 200px 150px, rgba(255,255,255,0.5), transparent);
+      background-size: 240px 200px;
+      animation: derive 60s linear infinite;
+    }
+    @keyframes derive { to { background-position: 240px 200px; } }
+
+    .cache { display: none !important; }
+
+    .ecran {
+      position: relative;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 40px 20px 60px 20px;
+      text-align: center;
+      animation: entree 0.5s ease;
+    }
+    @keyframes entree { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+    h1 { font-size: 52px; margin: 0; color: var(--accent); text-shadow: 0 0 25px var(--accent); }
+    h2 { margin-top: 36px; }
+    .sous-titre { font-size: 20px; color: var(--doux); margin-bottom: 30px; }
+    .doux { color: var(--doux); }
+
+    /* bouton son */
+    .son {
+      position: fixed; top: 12px; right: 12px; z-index: 60;
+      width: 44px; height: 44px; border-radius: 50%; border: none;
+      background: var(--carte); color: white; font-size: 20px; cursor: pointer;
+    }
+
+    textarea {
+      width: 100%;
+      max-width: 700px;
+      height: 160px;
+      border-radius: 12px;
+      border: none;
+      padding: 15px;
+      font-size: 16px;
+      font-family: Arial, sans-serif;
+    }
+    .message-erreur { color: #ff8a80; min-height: 24px; margin: 8px 0 0 0; font-weight: bold; }
+
+    .modes { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: 20px; }
+    .mode {
+      width: 190px;
+      padding: 22px 14px;
+      border-radius: 16px;
+      background: var(--carte);
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .mode:hover { transform: translateY(-6px); border-color: var(--accent); }
+    .mode.selectionne { border-color: var(--accent); box-shadow: 0 0 20px rgba(255,255,255,0.15); }
+    .mode .icone { font-size: 46px; }
+    .mode h3 { margin: 10px 0 5px 0; }
+    .mode p { margin: 0; font-size: 14px; color: var(--doux); }
+    .mode .record { margin-top: 8px; color: var(--accent); font-weight: bold; min-height: 18px; }
+
+    .choix-nb { margin-top: 14px; }
+    .nb {
+      padding: 10px 20px; margin: 6px; font-size: 16px; color: white; cursor: pointer;
+      background: transparent; border: 2px solid var(--doux); border-radius: 10px;
+    }
+    .nb.selectionne { background: var(--accent); color: #14102b; border-color: var(--accent); font-weight: bold; }
+
+    .niv {
+      padding: 10px 20px; margin: 6px; font-size: 16px; color: white; cursor: pointer;
+      background: transparent; border: 2px solid var(--doux); border-radius: 10px;
+    }
+    .niv.selectionne { background: var(--accent); color: #14102b; border-color: var(--accent); font-weight: bold; }
+
+    /* profil du joueur */
+    .profil { max-width: 560px; margin: 0 auto 10px auto; background: rgba(255,255,255,0.07); border-radius: 16px; padding: 14px 18px; }
+    .profil-haut { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .pseudo { flex: 1; min-width: 140px; padding: 8px 12px; font-size: 18px; font-weight: bold; border: 2px solid var(--doux); border-radius: 10px; background: transparent; color: white; }
+    .niveau-joueur { color: var(--accent); font-weight: bold; font-size: 18px; }
+    .barre-xp { height: 12px; background: rgba(255,255,255,0.15); border-radius: 8px; overflow: hidden; margin-top: 10px; }
+    .barre-xp-rempli { height: 100%; background: var(--accent); transition: width 0.6s; }
+    .texte-xp { font-size: 13px; color: var(--doux); margin-top: 4px; }
+    .badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 12px; }
+    .badge { padding: 6px 12px; border-radius: 20px; background: var(--accent); color: #14102b; font-weight: bold; font-size: 14px; cursor: default; }
+    .badge.verrouille { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.55); font-weight: normal; }
+    .btn-discret { margin-top: 10px; background: none; border: none; color: var(--doux); text-decoration: underline; font-size: 12px; cursor: pointer; }
+    .gain-xp { color: var(--accent); font-size: 26px; font-weight: bold; margin: 4px 0; animation: pop 0.6s 1.4s both; }
+    .carte-badge { display: inline-block; margin: 6px; padding: 10px 16px; border-radius: 12px; background: var(--accent); color: #14102b; font-weight: bold; animation: pop 0.6s 1.8s both; }
+
+    .btn {
+      margin-top: 30px;
+      padding: 15px 40px;
+      font-size: 20px;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      background: var(--accent);
+      color: #14102b;
+      cursor: pointer;
+      transition: transform 0.15s, filter 0.15s;
+    }
+    .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+    .btn.secondaire {
+      background: transparent;
+      color: white;
+      border: 2px solid var(--doux);
+      font-size: 16px;
+      padding: 10px 24px;
+      margin-top: 14px;
+    }
+
+    /* chargement */
+    .spinner {
+      width: 70px; height: 70px; margin: 60px auto 20px auto;
+      border: 8px solid rgba(255,255,255,0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: tourne 1s linear infinite;
+    }
+    @keyframes tourne { to { transform: rotate(360deg); } }
+
+    /* écran de jeu */
+    .scene { margin-bottom: 10px; }
+    .scene span { display: inline-block; font-size: 44px; margin: 0 12px; animation: flotte 3s ease-in-out infinite; }
+    @keyframes flotte { 50% { transform: translateY(-10px); } }
+
+    .barre {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 12px; background: var(--carte); border-radius: 14px; padding: 12px 18px; font-weight: bold;
+    }
+    .b-score span { color: var(--accent); font-size: 20px; }
+    .coeur { font-size: 22px; margin: 0 2px; }
+    .jauge { display: flex; align-items: center; gap: 8px; }
+    .jauge-cadre { width: 130px; height: 14px; background: rgba(255,255,255,0.15); border-radius: 8px; overflow: hidden; }
+    .jauge-rempli { height: 100%; background: var(--accent); transition: width 0.5s; }
+    .chemin { display: flex; align-items: center; gap: 4px; }
+    .chemin .etape { font-size: 20px; opacity: 0.4; }
+    .chemin .etape.faite { opacity: 1; color: var(--accent); }
+    .chemin .etape.en-cours { opacity: 1; animation: pulse 1s infinite; }
+    .chemin .trait { width: 16px; height: 3px; background: rgba(255,255,255,0.3); }
+    @keyframes pulse { 50% { transform: scale(1.3); } }
+
+    .progres { height: 8px; background: rgba(255,255,255,0.12); border-radius: 6px; margin: 14px 0 22px 0; overflow: hidden; }
+    .progres-rempli { height: 100%; background: var(--accent); transition: width 0.6s; }
+
+    .intro { background: rgba(255,255,255,0.07); border-radius: 14px; padding: 6px 20px 16px 20px; margin-bottom: 18px; }
+    .intro h2 { margin-top: 14px; color: var(--accent); }
+
+    /* le scénario : une présentation différente par mode */
+    .scenario {
+      background: var(--carte); border-left: 6px solid var(--accent);
+      border-radius: 12px; padding: 16px 20px; text-align: left; line-height: 1.55; font-size: 17px;
+    }
+    .etiquette { color: var(--accent); font-weight: bold; margin-bottom: 6px; letter-spacing: 2px; font-size: 14px; }
+    body[data-mode="enquete"] .scenario {
+      background: #efe3c8; color: #3b2f1e; border-left: 8px solid #c0392b; font-family: Georgia, serif;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35); transform: rotate(-0.4deg);
+    }
+    body[data-mode="enquete"] .etiquette { color: #a93226; }
+    body[data-mode="aventure"] .scenario {
+      background: #f1deb0; color: #3a2a12; border: 4px double #8a6a2f; font-family: Georgia, serif;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    }
+    body[data-mode="aventure"] .etiquette { color: #7a5a1f; }
+    body[data-mode="survie"] .scenario {
+      background: repeating-linear-gradient(135deg, #3a1d14, #3a1d14 14px, #46251a 14px, #46251a 28px);
+      border-left: 8px solid #ff8c42;
+    }
+    body[data-mode="strategie"] .scenario {
+      background: linear-gradient(rgba(110,198,255,0.10) 1px, transparent 1px) 0 0 / 100% 28px, #22204f;
+      border-left: 8px solid #6ec6ff;
+    }
+    .question { margin: 24px 0 10px 0; }
+
+    .choix { text-align: left; }
+    .choix-btn {
+      display: flex; align-items: center; gap: 14px; width: 100%;
+      margin: 10px 0; padding: 16px; font-size: 17px; color: white; text-align: left;
+      background: var(--carte); border: 2px solid transparent; border-radius: 14px; cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+      font-family: Arial, sans-serif;
+    }
+    .choix-btn:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--accent); }
+    .choix-btn .lettre {
+      flex: none; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.12);
+      display: flex; align-items: center; justify-content: center; font-weight: bold;
+    }
+    .choix-btn.bon { background: var(--bon); animation: brille 0.8s; }
+    .choix-btn.mauvais { background: var(--mauvais); opacity: 0.85; animation: secoue 0.4s; }
+    .choix-btn:disabled { cursor: default; }
+    @keyframes secoue { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+    @keyframes brille { 0% { box-shadow: 0 0 0 0 rgba(46,204,113,0.9); } 100% { box-shadow: 0 0 0 24px rgba(46,204,113,0); } }
+
+    .feedback { margin-top: 18px; padding: 14px 18px; border-radius: 12px; text-align: left; line-height: 1.5; animation: entree 0.4s; }
+    .feedback.bon { background: rgba(30,132,73,0.35); border: 2px solid var(--bon); }
+    .feedback.mauvais { background: rgba(146,43,33,0.35); border: 2px solid var(--mauvais); }
+    .feedback strong { display: block; margin-bottom: 4px; }
+
+    /* écran final */
+    .etoiles { font-size: 56px; letter-spacing: 8px; }
+    .etoile { display: inline-block; opacity: 0; animation: pop 0.5s forwards; }
+    .etoile.pleine { color: var(--accent); text-shadow: 0 0 20px var(--accent); }
+    .etoile.vide { color: rgba(255,255,255,0.3); }
+    @keyframes pop { 0% { opacity: 0; transform: scale(0.2) rotate(-90deg); } 70% { transform: scale(1.3); } 100% { opacity: 1; transform: none; } }
+    .gros-score { font-size: 28px; font-weight: bold; margin: 6px 0; }
+    .nouveau-record { color: var(--accent); font-size: 22px; font-weight: bold; animation: pulse 1s infinite; }
+    .colonnes { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 26px; text-align: left; }
+    .colonne { flex: 1; min-width: 260px; background: var(--carte); border-radius: 14px; padding: 8px 20px 14px 20px; }
+    .colonne ul { padding-left: 20px; line-height: 1.6; }
+    .erreur { color: #ff8a80; font-size: 18px; }
+
+    .fichier { display: inline-block; cursor: pointer; margin-left: 8px; }
+    .astuce { font-size: 13px; color: var(--doux); margin-top: 18px; }
+    .historique { margin-top: 40px; text-align: left; background: rgba(255,255,255,0.06); border-radius: 14px; padding: 4px 22px 18px 22px; }
+    .historique ul { padding-left: 18px; line-height: 1.8; color: var(--doux); }
+    .confetti { position: fixed; top: -30px; font-size: 24px; pointer-events: none; z-index: 50; animation: tombe linear forwards; }
+    @keyframes tombe { to { transform: translateY(115vh) rotate(540deg); } }
+
+    /* retour de réponse : présent dès le départ (pour les lecteurs d'écran), mais invisible tant qu'il est vide */
+    .feedback.vide { padding: 0; margin: 0; border: 0; height: 0; overflow: hidden; animation: none; }
+
+    /* carnet */
+    .carnet-carte { background: var(--carte); border-radius: 14px; padding: 14px 18px; margin: 12px 0; text-align: left; }
+    .carnet-notion { font-size: 13px; color: var(--doux); }
+    .carnet-question { font-weight: bold; margin: 6px 0; }
+    .carnet-explication { line-height: 1.5; margin: 10px 0 0 0; padding: 10px 12px; background: rgba(255,255,255,0.07); border-radius: 10px; }
+
+    /* écran d'attente */
+    .compteur { font-size: 28px; font-weight: bold; color: var(--accent); margin: 4px 0; }
+    .conseil { max-width: 520px; margin: 14px auto; color: var(--doux); line-height: 1.5; }
+
+    /* accessibilité : contour visible au clavier */
+    button:focus-visible, input:focus-visible, textarea:focus-visible, .mode:focus-visible {
+      outline: 3px solid #ffffff;
+      outline-offset: 3px;
+    }
+
+    /* ===================== Design v2 : verre, lueurs et dégradés ===================== */
+    :root { --police: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif; }
+    body, button, input, textarea { font-family: var(--police); }
+    body { letter-spacing: 0.01em; scrollbar-color: var(--accent) transparent; }
+    ::selection { background: var(--accent); color: #14102b; }
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
+
+    /* fond : halo de la couleur du mode + aurore qui bouge doucement */
+    body {
+      background:
+        radial-gradient(ellipse at 15% 0%, color-mix(in srgb, var(--accent) 22%, transparent) 0%, transparent 46%),
+        radial-gradient(ellipse at 92% 12%, color-mix(in srgb, var(--carte) 85%, white) 0%, transparent 50%),
+        linear-gradient(180deg, var(--carte) 0%, var(--fond) 58%);
+      background-attachment: fixed;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      z-index: -1;
+      width: 60vmax; height: 60vmax;
+      left: -22vmax; top: -34vmax;
+      pointer-events: none;
+      background: radial-gradient(circle, color-mix(in srgb, var(--accent) 32%, transparent), transparent 62%);
+      filter: blur(40px);
+      animation: aurore 20s ease-in-out infinite alternate;
+    }
+    @keyframes aurore { to { transform: translate(38vmax, 14vmax) scale(1.2); } }
+
+    /* titre : dégradé qui brille */
+    h1 {
+      background: linear-gradient(90deg, var(--accent), #ffffff 45%, var(--accent));
+      background-size: 200% auto;
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; color: transparent;
+      text-shadow: none;
+      letter-spacing: 0.04em;
+      filter: drop-shadow(0 0 18px color-mix(in srgb, var(--accent) 55%, transparent));
+      animation: brille-titre 7s linear infinite;
+    }
+    @keyframes brille-titre { to { background-position: -200% center; } }
+    @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+      h1 { color: var(--accent); -webkit-text-fill-color: currentColor; background: none; }
+    }
+    .sous-titre { letter-spacing: 0.06em; }
+    h2 { letter-spacing: 0.02em; }
+    .ecran > h2:not(.question)::after {
+      content: ""; display: block; width: 48px; height: 4px; margin: 10px auto 0 auto;
+      border-radius: 4px; background: var(--accent);
+    }
+
+    /* cartes en verre */
+    .profil, .barre, .colonne, .intro, .carnet-carte, .historique, .bloc3d-boite {
+      background: color-mix(in srgb, var(--carte) 62%, transparent);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    }
+    .barre { border-radius: 16px; }
+
+    /* cartes de mode : chacune avec sa couleur */
+    .mode[data-mode="aventure"]  { --acc: #9be564; }
+    .mode[data-mode="enquete"]   { --acc: #f4a736; }
+    .mode[data-mode="survie"]    { --acc: #ff8c42; }
+    .mode[data-mode="strategie"] { --acc: #6ec6ff; }
+    .mode {
+      position: relative; overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.12); border-radius: 22px;
+      background: color-mix(in srgb, var(--carte) 62%, transparent);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+      transition: transform 0.25s cubic-bezier(.2, .8, .2, 1), box-shadow 0.25s, border-color 0.25s;
+      animation: monte 0.6s cubic-bezier(.2, .8, .2, 1) backwards;
+    }
+    .mode:nth-child(2) { animation-delay: 0.08s; }
+    .mode:nth-child(3) { animation-delay: 0.16s; }
+    .mode:nth-child(4) { animation-delay: 0.24s; }
+    @keyframes monte { from { opacity: 0; transform: translateY(22px) scale(0.96); } }
+    .mode::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.25s;
+      background: radial-gradient(circle at 50% -10%, color-mix(in srgb, var(--acc) 42%, transparent), transparent 62%);
+    }
+    .mode > * { position: relative; }
+    .mode .icone { filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.35)); transition: transform 0.25s; }
+    .mode:hover { transform: translateY(-6px); border-color: var(--acc); }
+    .mode:hover::before, .mode.selectionne::before { opacity: 1; }
+    .mode:hover .icone, .mode.selectionne .icone { transform: scale(1.14) rotate(-5deg); }
+    .mode.selectionne {
+      transform: translateY(-4px); border-color: var(--acc);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--acc) 38%, transparent), 0 16px 36px rgba(0, 0, 0, 0.38);
+    }
+    .mode h3 { letter-spacing: 0.03em; }
+    .mode .record { color: var(--acc); }
+
+    /* boutons */
+    .btn {
+      background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 70%, white));
+      border-radius: 16px; letter-spacing: 0.02em;
+      box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 38%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      transition: transform 0.18s, box-shadow 0.18s, filter 0.18s;
+    }
+    .btn:hover { transform: translateY(-3px); filter: none; box-shadow: 0 14px 30px color-mix(in srgb, var(--accent) 50%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.5); }
+    .btn:active { transform: translateY(0) scale(0.98); }
+    .btn.secondaire {
+      background: color-mix(in srgb, var(--carte) 45%, transparent);
+      border: 1.5px solid color-mix(in srgb, var(--doux) 75%, transparent);
+      box-shadow: none; color: #ffffff;
+      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    }
+    .btn.secondaire:hover { border-color: var(--accent); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25); }
+    .nb, .niv, .vue { border-radius: 14px; transition: transform 0.18s, background 0.18s, box-shadow 0.18s; }
+    .nb:hover, .niv:hover, .vue:hover { transform: translateY(-2px); }
+    .nb.selectionne, .niv.selectionne, .vue.selectionne {
+      background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 70%, white));
+      box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+    }
+
+    /* saisie */
+    textarea { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); border: 2px solid transparent; transition: border-color 0.2s, box-shadow 0.2s; }
+    textarea:focus { border-color: var(--accent); }
+    .pseudo { background: rgba(255, 255, 255, 0.06); border-radius: 12px; }
+    .son { background: color-mix(in srgb, var(--carte) 70%, transparent); border: 1px solid rgba(255, 255, 255, 0.18); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+
+    /* jeu */
+    .scene span { filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.45)); }
+    .progres { height: 10px; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4); }
+    .progres-rempli, .barre-xp-rempli {
+      background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 65%, white), var(--accent));
+      box-shadow: 0 0 14px var(--accent);
+    }
+    .choix-btn {
+      border: 1.5px solid rgba(255, 255, 255, 0.14); border-radius: 16px;
+      background: color-mix(in srgb, var(--carte) 72%, transparent);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+      transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+    }
+    .choix-btn:hover:not(:disabled) { transform: translateX(6px); border-color: var(--accent); box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 28%, transparent); }
+    .choix-btn .lettre {
+      background: color-mix(in srgb, var(--accent) 20%, transparent);
+      border: 1.5px solid color-mix(in srgb, var(--accent) 70%, transparent); color: var(--accent);
+    }
+    .choix-btn.bon { background: linear-gradient(135deg, #1e8449, #27ae60); border-color: #58d68d; }
+    .choix-btn.mauvais { border-color: #e74c3c; }
+    .choix-btn.bon .lettre, .choix-btn.mauvais .lettre { color: #ffffff; background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.55); }
+    .feedback { border-radius: 14px; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25); }
+    .gros-score { font-size: 30px; }
+    .badge { box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 30%, transparent); }
+    .badge.verrouille { box-shadow: none; }
+    .spinner { box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 40%, transparent); }
+
+    /* salle 3D */
+    .info3d, .invite3d {
+      background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.18);
+      -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    }
+
+    /* accueil allégé */
+    .carnet-coin {
+      position: fixed; top: 12px; left: 12px; z-index: 60; height: 44px; padding: 0 16px; border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.18); background: color-mix(in srgb, var(--carte) 70%, transparent);
+      color: #ffffff; font-size: 15px; font-weight: bold; cursor: pointer;
+      -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    }
+    .carnet-coin:hover { border-color: var(--accent); }
+    #bloc-vue { margin-top: 22px; }
+    #bloc-vue .vue { padding: 12px 26px; font-size: 17px; color: white; cursor: pointer; background: transparent; border: 2px solid var(--doux); }
+    .options, .historique { max-width: 560px; margin: 26px auto 0 auto; text-align: left; }
+    .options summary, .historique summary, .profil-plus summary { cursor: pointer; color: var(--doux); font-weight: bold; padding: 8px 4px; }
+    .options summary:hover, .historique summary:hover, .profil-plus summary:hover { color: var(--accent); }
+    .options-corps { background: color-mix(in srgb, var(--carte) 55%, transparent); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; padding: 6px 18px 18px 18px; text-align: center; }
+    .options-titre { margin: 14px 0 0 0; color: var(--doux); font-size: 14px; letter-spacing: 0.05em; }
+    .options .choix-nb .btn { margin-top: 6px; font-size: 15px; padding: 10px 18px; }
+    .historique { padding: 4px 18px 14px 18px; }
+    .profil-plus { margin-top: 8px; text-align: center; }
+
+    /* téléphone */
+    html { -webkit-text-size-adjust: 100%; }
+    body { overflow-x: hidden; }
+    @media (max-width: 600px) {
+      h1 { font-size: clamp(34px, 10vw, 52px); }
+      .ecran { padding: 24px 14px 50px 14px; }
+      textarea { height: 140px; }
+      .mode { width: calc(50% - 10px); min-width: 140px; padding: 16px 10px; }
+      .mode .icone { font-size: 36px; }
+      .btn { width: 100%; max-width: 420px; min-height: 48px; }
+      .nb, .niv { min-height: 44px; }
+      .choix-btn { min-height: 56px; }
+      .barre { font-size: 15px; padding: 10px 12px; }
+      .scene span { font-size: 34px; margin: 0 6px; }
+      .etoiles { font-size: 44px; letter-spacing: 4px; }
+      .colonne { min-width: 100%; }
+      .profil { padding: 12px; }
+      .jauge-cadre { width: 90px; }
+    }
+
+    /* bannières : mode terminé / pas encore terminé */
+    .bandeau { display: inline-block; margin-bottom: 8px; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: bold; letter-spacing: 0.03em; }
+    .bandeau.fini { background: #1e8449; color: #ffffff; }
+    .bandeau.bientot { background: #f39c12; color: #2b1a00; }
+
+    /* choix de la vue (classique / 3D) */
+    .vue {
+      padding: 10px 20px; margin: 6px; font-size: 16px; color: white; cursor: pointer;
+      background: transparent; border: 2px solid var(--doux); border-radius: 10px;
+    }
+    .vue.selectionne { background: var(--accent); color: #14102b; border-color: var(--accent); font-weight: bold; }
+
+    /* exploration 3D */
+    .ecran.plein { position: fixed; inset: 0; max-width: none; margin: 0; padding: 0; z-index: 30; background: #000; animation: none; text-align: left; }
+    #scene3d { position: absolute; inset: 0; }
+    .info3d { position: absolute; top: 12px; left: 12px; z-index: 5; padding: 8px 14px; border-radius: 12px; background: rgba(0,0,0,0.55); font-weight: bold; }
+    .viseur { position: absolute; top: 50%; left: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; z-index: 5; pointer-events: none; }
+    .viseur::before, .viseur::after { content: ""; position: absolute; background: rgba(255,255,255,0.85); }
+    .viseur::before { left: 6px; top: 0; width: 2px; height: 14px; }
+    .viseur::after { top: 6px; left: 0; height: 2px; width: 14px; }
+    .invite3d { position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%); z-index: 5; padding: 12px 20px; border-radius: 14px; background: rgba(0,0,0,0.72); border: 2px solid var(--accent); font-weight: bold; font-size: 18px; text-align: center; }
+    .bloc3d { position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,0.65); text-align: center; }
+    .bloc3d-boite { max-width: 560px; background: var(--carte); border-radius: 18px; padding: 14px 26px 26px 26px; }
+    .bloc3d-boite h2 { margin-top: 10px; color: var(--accent); }
+    .astuce3d { font-size: 14px; color: var(--doux); line-height: 1.7; }
+    .credit { margin-top: 30px; font-size: 12px; color: var(--doux); opacity: 0.8; }
+
+    /* messages animés : ils ne doivent jamais dépasser de l'écran quand ils grossissent */
+    .gain-xp, .nouveau-record { display: table; margin: 6px auto; }
+    .carte-badge { max-width: 100%; }
+
+    /* accessibilité : moins d'animations si la personne le demande */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .etoile { opacity: 1 !important; }
+    }
+  </style>
+</head>
+<body data-mode="enquete">
+
+  <button id="btn-son" class="son" title="Son (touche M)" aria-label="Couper ou remettre le son" aria-pressed="false">🔊</button>
+
+  <button id="btn-carnet" class="carnet-coin">📓 Mon carnet (0)</button>
+
+  <!-- ACCUEIL -->
+  <div id="ecran-accueil" class="ecran">
+    <h1>StudyQuest</h1>
+    <p class="sous-titre">Transforme ton cours en aventure !</p>
+
+    <div id="profil" class="profil"></div>
+
+    <h2>1. Colle ton cours</h2>
+    <textarea id="cours" placeholder="Colle ici le texte de ton cours (200 caractères minimum)... ou glisse un fichier .txt ou .pdf"></textarea>
+    <p id="msg-cours" class="message-erreur"></p>
+    <p id="msg-fichier" class="doux"></p>
+
+    <h2>2. Choisis ton mode de jeu</h2>
+    <div class="modes">
+      <div class="mode" data-mode="aventure">
+        <div class="bandeau fini">✅ Île 3D terminée</div>
+        <div class="icone">🗺️</div><h3>Aventure</h3><p>Explore et avance dans une histoire</p>
+        <div class="record" id="record-aventure"></div>
+      </div>
+      <div class="mode" data-mode="enquete">
+        <div class="bandeau bientot">🚧 Île 3D bientôt</div>
+        <div class="icone">🔍</div><h3>Enquête</h3><p>Résous un mystère avec des indices</p>
+        <div class="record" id="record-enquete"></div>
+      </div>
+      <div class="mode" data-mode="survie">
+        <div class="bandeau bientot">🚧 Île 3D bientôt</div>
+        <div class="icone">🏝️</div><h3>Survie</h3><p>Prends les bonnes décisions</p>
+        <div class="record" id="record-survie"></div>
+      </div>
+      <div class="mode" data-mode="strategie">
+        <div class="bandeau bientot">🚧 Île 3D bientôt</div>
+        <div class="icone">♟️</div><h3>Stratégie</h3><p>Planifie et gère tes ressources</p>
+        <div class="record" id="record-strategie"></div>
+      </div>
+    </div>
+
+    <div id="bloc-vue">
+      <button id="btn-3d" class="vue" aria-pressed="false">🧊 Exploration 3D : désactivée</button>
+    </div>
+
+    <button id="btn-lancer" class="btn">Lancer le jeu</button>
+
+    <details id="options" class="options">
+      <summary>⚙️ Options</summary>
+      <div class="options-corps">
+        <p class="options-titre">Nombre de questions</p>
+        <div class="choix-nb">
+          <button class="nb selectionne" data-nb="3">3 · rapide</button>
+          <button class="nb" data-nb="5">5 · complet</button>
+        </div>
+        <p class="options-titre">Ton niveau</p>
+        <div class="choix-nb">
+          <button class="niv" data-niveau="college">Collège</button>
+          <button class="niv" data-niveau="lycee">Lycée</button>
+          <button class="niv" data-niveau="superieur">Supérieur</button>
+        </div>
+        <p class="options-titre">Outils</p>
+        <div class="choix-nb">
+          <label class="btn secondaire fichier">📄 Importer un fichier
+            <input type="file" id="fichier" accept=".txt,.pdf,text/plain,application/pdf" hidden>
+          </label>
+          <button id="btn-exemple" class="btn secondaire">Cours d'exemple</button>
+          <button id="btn-demo" class="btn secondaire">Démo sans IA</button>
+        </div>
+      </div>
+    </details>
+
+    <details id="historique" class="historique cache">
+      <summary>📚 Historique des parties</summary>
+      <ul id="liste-historique"></ul>
+      <button id="btn-effacer" class="btn secondaire">Effacer l'historique</button>
+    </details>
+
+    <p class="credit">🧊 Exploration 3D : Three.js (MIT), inspirée du first-person-starter-kit d’Augusto Polonio (MIT).</p>
+  </div>
+
+  <!-- CHARGEMENT -->
+  <div id="ecran-chargement" class="ecran cache">
+    <div class="spinner"></div>
+    <h2 id="texte-chargement" aria-live="polite"></h2>
+    <p class="doux">Ça peut prendre jusqu'à une minute.</p>
+    <p id="compteur-attente" class="compteur" aria-hidden="true">0 s</p>
+    <p id="conseil-attente" class="conseil"></p>
+    <p id="msg-long" class="doux cache">Ça prend du temps... tu peux jouer à la démo sans IA.</p>
+    <button id="btn-demo-attente" class="btn cache">Jouer à la démo (sans IA)</button><br>
+    <button id="btn-annuler" class="btn secondaire">Annuler</button>
+  </div>
+
+  <!-- ERREUR -->
+  <div id="ecran-erreur" class="ecran cache">
+    <h2>Oups…</h2>
+    <p id="texte-erreur" class="erreur"></p>
+    <button id="btn-reessayer" class="btn">Réessayer</button><br>
+    <button id="btn-demo-erreur" class="btn secondaire">Jouer à la démo (sans IA)</button><br>
+    <button id="btn-retour" class="btn secondaire">Retour à l'accueil</button>
+  </div>
+
+  <!-- JEU -->
+  <div id="ecran-jeu" class="ecran cache"></div>
+
+  <!-- BILAN -->
+  <div id="ecran-final" class="ecran cache"></div>
+
+  <!-- EXPLORATION 3D -->
+  <div id="ecran-3d" class="ecran plein cache">
+    <div id="scene3d"></div>
+    <div id="info3d" class="info3d"></div>
+    <div class="viseur" aria-hidden="true"></div>
+    <div id="invite3d" class="invite3d cache" aria-live="polite"></div>
+    <div id="bloc3d" class="bloc3d">
+      <div class="bloc3d-boite">
+        <h2 id="titre3d"></h2>
+        <p id="intro3d"></p>
+        <p class="astuce3d">🖱️ Souris : regarder · ZQSD / WASD / flèches : marcher · Maj : courir · Espace : sauter<br>E (ou clic) : ouvrir une mission · Tab : grande carte · M : couper le son · Échap : libérer la souris</p>
+        <button id="btn-entrer3d" class="btn">Cliquer pour entrer dans la salle</button><br>
+        <button id="btn-classique3d" class="btn secondaire">Passer en version classique</button><br>
+        <button id="btn-quitter3d" class="btn secondaire">Quitter la partie</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARNET -->
+  <div id="ecran-carnet" class="ecran cache"></div>
+
+  <script>
+    const MODES = {
+      enquete:   { nom: 'Enquête',   icone: '🔍', mot: 'Mission',  etiquette: '📁 DOSSIER CONFIDENTIEL', chargement: "L'IA prépare ton enquête...",  scene: ['🕵️', '🔎', '📁'] },
+      aventure:  { nom: 'Aventure',  icone: '🗺️', mot: 'Étape',    etiquette: '📜 LE RÉCIT',             chargement: "L'IA écrit ton aventure...",   scene: ['🏰', '🧭', '🐉'] },
+      survie:    { nom: 'Survie',    icone: '🏝️', mot: 'Épreuve',  etiquette: '⚠️ SITUATION D\'URGENCE', chargement: "L'IA prépare ta survie...",    scene: ['🏝️', '🔥', '🌊'] },
+      strategie: { nom: 'Stratégie', icone: '♟️', mot: 'Décision', etiquette: '📊 RAPPORT DE SITUATION', chargement: "L'IA prépare ta stratégie...", scene: ['🏙️', '📈', '🧩'] }
+    };
+
+    const BADGES = {
+      premier:     { icone: '👣', nom: 'Premier pas',   desc: 'Terminer ta première partie' },
+      trois:       { icone: '⭐', nom: 'Trois étoiles', desc: 'Obtenir 3 étoiles' },
+      sans:        { icone: '🎯', nom: 'Sans faute',    desc: 'Réussir toutes les questions du premier coup' },
+      explorateur: { icone: '🧭', nom: 'Explorateur',   desc: 'Jouer les 4 modes' },
+      marathon:    { icone: '🏃', nom: 'Marathon',      desc: 'Terminer une partie à 5 questions' },
+      survivant:   { icone: '🏝️', nom: 'Survivant',     desc: 'Terminer une partie de Survie sans perdre' }
+    };
+
+    const COURS_EXEMPLE = "La photosynthèse est le processus par lequel les plantes vertes fabriquent leur nourriture. Elle se déroule dans les feuilles, plus précisément dans les chloroplastes, qui contiennent un pigment vert appelé chlorophylle. La chlorophylle capte l'énergie de la lumière du soleil. Grâce à cette énergie, la plante transforme l'eau, absorbée par les racines, et le dioxyde de carbone, pris dans l'air par de petits trous appelés stomates, en glucose (un sucre). Cette transformation produit aussi du dioxygène, qui est rejeté dans l'air. Le glucose sert de nourriture à la plante : elle l'utilise pour grandir ou le stocke. La photosynthèse ne peut avoir lieu que de jour, car elle a besoin de lumière. Sans photosynthèse, il n'y aurait presque pas d'oxygène dans l'air pour respirer.";
+
+    // ---------- Démo sans IA (pour ne jamais être bloqué le jour de la présentation) ----------
+    const DEMO_QUESTIONS = [
+      { question: "Dans quelle partie de la plante se déroule la photosynthèse ?",
+        choix: ["Dans les feuilles", "Dans les racines", "Dans la tige", "Dans les fleurs"],
+        indice: "Pense à la partie verte qui capte la lumière.",
+        explication: "La photosynthèse se déroule dans les feuilles, dans les chloroplastes qui contiennent la chlorophylle." },
+      { question: "Quel gaz les plantes rejettent-elles pendant la photosynthèse ?",
+        choix: ["Le dioxygène", "Le dioxyde de carbone", "L'azote", "L'hélium"],
+        indice: "C'est le gaz que nous respirons.",
+        explication: "La transformation produit du dioxygène, qui est rejeté dans l'air." },
+      { question: "Pourquoi la photosynthèse ne peut-elle avoir lieu que de jour ?",
+        choix: ["Elle a besoin de lumière", "Les plantes dorment la nuit", "Il fait trop froid la nuit", "L'eau disparaît la nuit"],
+        indice: "Quelle énergie la chlorophylle capte-t-elle ?",
+        explication: "La chlorophylle capte l'énergie de la lumière du soleil : sans lumière, pas de photosynthèse." }
+    ];
+    const DEMO_HISTOIRES = {
+      enquete: { titre: "Le mystère de la feuille verte",
+        intro: "Un jardinier a retrouvé sa plante toute fanée. Tu es appelé pour mener l'enquête.",
+        scenarios: ["Premier indice : les feuilles sont jaunes et molles. Le jardinier jure qu'il les a arrosées.",
+                    "Deuxième indice : un carnet note que la plante a rendu l'air du laboratoire plus « frais ».",
+                    "Dernier indice : la plante était enfermée dans une pièce sans fenêtre."] },
+      aventure: { titre: "La quête de la Forêt Lumineuse",
+        intro: "Jeune explorateur, tu dois sauver la forêt enchantée en comprenant le secret des plantes.",
+        scenarios: ["Un vieux sage te barre la route et veut savoir où les plantes fabriquent leur nourriture.",
+                    "Une fée t'offre un souffle magique, mais elle veut savoir de quel gaz il s'agit.",
+                    "La porte du château ne s'ouvre qu'à la lumière du jour. Le gardien te demande pourquoi."] },
+      survie: { titre: "Perdu sur l'île verte",
+        intro: "Ton bateau a coulé. Pour survivre sur cette île, les plantes seront ton meilleur atout.",
+        scenarios: ["Tu observes une plante et tu veux comprendre où elle fabrique sa nourriture.",
+                    "Dans ta grotte, l'air devient lourd. Les plantes pourraient t'aider : que rejettent-elles ?",
+                    "La nuit tombe. Ton ami veut faire pousser une plante dans le noir : explique-lui le problème."] },
+      strategie: { titre: "Le Projet Jardin de la Cité",
+        intro: "Tu diriges un projet de jardin urbain. Chaque décision doit s'appuyer sur le fonctionnement des plantes.",
+        scenarios: ["Les équipes hésitent sur l'endroit où placer les plantes pour qu'elles fabriquent leur nourriture.",
+                    "Le maire demande ce que les plantes apportent à l'air de la ville.",
+                    "Un ingénieur propose de planter dans un sous-sol sans lumière : tu dois trancher."] }
+    };
+
+    function construireDemo(m) {
+      const h = DEMO_HISTOIRES[m];
+      const missions = DEMO_QUESTIONS.map(function (q, i) {
+        const items = q.choix.map(function (c, k) { return { texte: c, ok: k === 0 }; });
+        for (let a = items.length - 1; a > 0; a--) {
+          const b = Math.floor(Math.random() * (a + 1));
+          const t = items[a]; items[a] = items[b]; items[b] = t;
+        }
+        return {
+          scenario: h.scenarios[i],
+          question: q.question,
+          choix: items.map(function (x) { return x.texte; }),
+          bonne_reponse: items.findIndex(function (x) { return x.ok; }),
+          indice: q.indice,
+          explication: q.explication
+        };
+      });
+      return { titre: h.titre, intro: h.intro, missions: missions,
+               notions: ["la chlorophylle", "les chloroplastes", "la lumière et le dioxygène"] };
+    }
+
+    // ---------- Sons ----------
+    const SONS = { bon: [660, 880], mauvais: [220, 170], victoire: [523, 659, 784, 1047], fin: [330, 262] };
+    let sonActif = true;
+    let audioCtx = null;
+
+    function bip(notes) {
+      if (!sonActif) return;
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const t = audioCtx.currentTime;
+        notes.forEach(function (f, i) {
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.type = 'sine';
+          o.frequency.value = f;
+          g.gain.setValueAtTime(0.0001, t + i * 0.13);
+          g.gain.exponentialRampToValueAtTime(0.15, t + i * 0.13 + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + (i + 1) * 0.13);
+          o.connect(g);
+          g.connect(audioCtx.destination);
+          o.start(t + i * 0.13);
+          o.stop(t + (i + 1) * 0.13 + 0.05);
+        });
+      } catch (e) { /* pas de son, ce n'est pas grave */ }
+    }
+
+    // ---------- Petits outils ----------
+    let mode = 'enquete';
+    let nbQuestions = 3;
+    let niveau = 'lycee';
+    let dernierFocus = null;
+    let controleur = null;
+    let vue3d = false;
+    let salle = null;
+    let module3d = null;
+    const tactile = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    let minuteur = null;
+    const CONSEILS = [
+      "Relire un cours le lendemain aide beaucoup plus que le relire 10 fois d'un coup.",
+      "Se tester soi-même (comme ici !) fait mieux retenir que relire.",
+      "Explique la notion à voix haute, comme si tu l'apprenais à quelqu'un.",
+      "Dors bien : le cerveau classe ce que tu as appris pendant la nuit.",
+      "Révise par petites séances de 25 minutes, avec une vraie pause entre deux.",
+      "Se tromper est utile : une erreur corrigée reste mieux en mémoire.",
+      "Commence par ce qui est le plus difficile, quand tu es encore frais.",
+      "Dessine un petit schéma : une image se retient mieux qu'un long texte."
+    ];
+    try {
+      const sn = localStorage.getItem('sq-niveau');
+      if (['college', 'lycee', 'superieur'].indexOf(sn) >= 0) niveau = sn;
+    } catch (e) { /* tant pis */ }
+    let partie = null;
+
+    function $(id) { return document.getElementById(id); }
+
+    function el(tag, classe, texte) {
+      const e = document.createElement(tag);
+      if (classe) e.className = classe;
+      if (texte !== undefined) e.textContent = texte;
+      return e;
+    }
+
+    function montrer(id) {
+      $('btn-carnet').classList.toggle('cache', id !== 'ecran-accueil');
+      ['ecran-accueil', 'ecran-chargement', 'ecran-erreur', 'ecran-jeu', 'ecran-final', 'ecran-carnet', 'ecran-3d'].forEach(function (x) {
+        $(x).classList.toggle('cache', x !== id);
+      });
+      window.scrollTo(0, 0);
+    }
+
+    function lireRecord(m) {
+      try { return parseInt(localStorage.getItem('sq-record-' + m) || '0', 10) || 0; } catch (e) { return 0; }
+    }
+    function ecrireRecord(m, v) {
+      try { localStorage.setItem('sq-record-' + m, String(v)); } catch (e) { /* tant pis */ }
+    }
+    // ---------- Carnet de notions ----------
+    function lireCarnet() {
+      try {
+        const c = JSON.parse(localStorage.getItem('sq-carnet') || '[]');
+        return Array.isArray(c) ? c.filter(function (x) { return x && typeof x.question === 'string'; }) : [];
+      } catch (e) { return []; }
+    }
+    function ecrireCarnet(c) {
+      try { localStorage.setItem('sq-carnet', JSON.stringify(c.slice(-30))); } catch (e) { /* tant pis */ }
+    }
+    function ajouterAuCarnet(item) {
+      const c = lireCarnet();
+      if (c.some(function (x) { return x.question === item.question; })) return false;
+      c.push(item);
+      ecrireCarnet(c);
+      return true;
+    }
+    function retirerDuCarnet(questions) {
+      const c = lireCarnet();
+      const reste = c.filter(function (x) { return questions.indexOf(x.question) < 0; });
+      ecrireCarnet(reste);
+      return c.length - reste.length;
+    }
+    function majBoutonCarnet() {
+      $('btn-carnet').textContent = '📓 Mon carnet (' + lireCarnet().length + ')';
+    }
+
+    function afficherCarnet() {
+      const zone = $('ecran-carnet');
+      zone.textContent = '';
+      const c = lireCarnet();
+
+      zone.appendChild(el('h1', '', '📓 Mon carnet'));
+      zone.appendChild(el('p', 'sous-titre', c.length === 0
+        ? 'Ton carnet est vide : continue de jouer, tes erreurs apparaîtront ici.'
+        : 'Les questions que tu as ratées. Relis-les, puis révise !'));
+
+      const liste = el('div', 'carnet-liste');
+      c.slice().reverse().forEach(function (x) {
+        const carte = el('div', 'carnet-carte');
+        carte.appendChild(el('div', 'carnet-notion', (x.notion || 'Cours') + (x.date ? ' · ' + x.date : '')));
+        carte.appendChild(el('p', 'carnet-question', x.question));
+        const expl = el('p', 'carnet-explication cache', String(x.explication || ''));
+        const bt = el('button', 'btn secondaire', 'Voir l’explication');
+        bt.addEventListener('click', function () {
+          const cache = expl.classList.toggle('cache');
+          bt.textContent = cache ? 'Voir l’explication' : 'Cacher l’explication';
+        });
+        carte.appendChild(bt);
+        carte.appendChild(expl);
+        liste.appendChild(carte);
+      });
+      zone.appendChild(liste);
+
+      const msg = el('p', 'message-erreur');
+      msg.id = 'msg-carnet';
+      zone.appendChild(msg);
+
+      if (c.length > 0) {
+        const br = el('button', 'btn', 'Réviser mon carnet');
+        br.addEventListener('click', reviserCarnet);
+        zone.appendChild(br);
+        zone.appendChild(el('br'));
+        const bv = el('button', 'btn secondaire', 'Vider le carnet');
+        bv.addEventListener('click', function () {
+          if (confirm('Vider tout ton carnet ?')) {
+            ecrireCarnet([]);
+            majBoutonCarnet();
+            afficherCarnet();
+          }
+        });
+        zone.appendChild(bv);
+        zone.appendChild(el('br'));
+      }
+      const bb = el('button', 'btn secondaire', 'Retour');
+      bb.addEventListener('click', function () { majRecords(); montrer('ecran-accueil'); });
+      zone.appendChild(bb);
+
+      montrer('ecran-carnet');
+    }
+
+    function reviserCarnet() {
+      const c = lireCarnet();
+      if ($('cours').value.trim().length < 200) {
+        $('msg-carnet').textContent = 'Pour réviser, colle d’abord ton cours sur la page d’accueil (au moins 200 caractères), puis reviens ici.';
+        return;
+      }
+      const choisis = c.slice().sort(function () { return Math.random() - 0.5; }).slice(0, 5).map(function (x) { return x.question; });
+      lancerAvec(choisis);
+    }
+
+    // ---------- Profil du joueur : pseudo, XP, niveau, badges ----------
+    function profilVide() { return { pseudo: '', xp: 0, badges: {}, modesJoues: {} }; }
+    function lireProfil() {
+      try {
+        const p = JSON.parse(localStorage.getItem('sq-profil') || 'null');
+        if (p && typeof p === 'object') {
+          return {
+            pseudo: typeof p.pseudo === 'string' ? p.pseudo.slice(0, 20) : '',
+            xp: Number(p.xp) > 0 ? Number(p.xp) : 0,
+            badges: p.badges && typeof p.badges === 'object' ? p.badges : {},
+            modesJoues: p.modesJoues && typeof p.modesJoues === 'object' ? p.modesJoues : {}
+          };
+        }
+      } catch (e) { /* tant pis */ }
+      return profilVide();
+    }
+    function ecrireProfil(p) {
+      try { localStorage.setItem('sq-profil', JSON.stringify(p)); } catch (e) { /* tant pis */ }
+    }
+    function niveauJoueur(xp) { return Math.floor(xp / 300) + 1; }
+
+    function afficherProfil() {
+      const prof = lireProfil();
+      const zone = $('profil');
+      zone.textContent = '';
+
+      const haut = el('div', 'profil-haut');
+      const champ = el('input', 'pseudo');
+      champ.type = 'text';
+      champ.maxLength = 20;
+      champ.placeholder = 'Joueur';
+      champ.value = prof.pseudo;
+      champ.setAttribute('aria-label', 'Ton pseudo');
+      champ.addEventListener('input', function () {
+        const q = lireProfil();
+        q.pseudo = champ.value.slice(0, 20);
+        ecrireProfil(q);
+      });
+      haut.appendChild(champ);
+      haut.appendChild(el('span', 'niveau-joueur', '⚔️ Niveau ' + niveauJoueur(prof.xp)));
+      zone.appendChild(haut);
+
+      const barre = el('div', 'barre-xp');
+      const rempli = el('div', 'barre-xp-rempli');
+      rempli.style.width = Math.round(((prof.xp % 300) / 300) * 100) + '%';
+      barre.appendChild(rempli);
+      zone.appendChild(barre);
+      zone.appendChild(el('div', 'texte-xp', (prof.xp % 300) + ' / 300 XP vers le niveau ' + (niveauJoueur(prof.xp) + 1)));
+
+      const liste = el('div', 'badges');
+      Object.keys(BADGES).forEach(function (id) {
+        const b = BADGES[id];
+        const debloque = !!prof.badges[id];
+        const e = el('span', 'badge' + (debloque ? '' : ' verrouille'), debloque ? b.icone + ' ' + b.nom : '🔒 ' + b.nom);
+        e.title = b.desc + (debloque ? ' (obtenu le ' + prof.badges[id] + ')' : '');
+        liste.appendChild(e);
+      });
+      const plus = el('details', 'profil-plus');
+      plus.open = location.search.indexOf('debug') >= 0;
+      plus.appendChild(el('summary', '', '🏅 Mes badges'));
+      plus.appendChild(liste);
+
+      const rst = el('button', 'btn-discret', 'Réinitialiser mon profil');
+      rst.addEventListener('click', function () {
+        if (confirm('Effacer ton pseudo, ton XP et tes badges ?')) {
+          try { localStorage.removeItem('sq-profil'); } catch (e) { /* tant pis */ }
+          afficherProfil();
+        }
+      });
+      plus.appendChild(rst);
+      zone.appendChild(plus);
+    }
+
+    function gagnerXp(p, etoiles) {
+      const prof = lireProfil();
+      const niveauAvant = niveauJoueur(prof.xp);
+      const gain = p.score + (etoiles === 3 ? 50 : 0);
+      prof.xp += gain;
+      prof.modesJoues[p.mode] = true;
+      const n = p.missions.length;
+      const gagnes = {
+        premier: true,
+        trois: etoiles === 3,
+        sans: !p.perdu && p.ratees.length === 0,
+        explorateur: Object.keys(MODES).every(function (m) { return prof.modesJoues[m]; }),
+        marathon: n >= 5 && !p.perdu,
+        survivant: p.mode === 'survie' && !p.perdu
+      };
+      const nouveaux = [];
+      Object.keys(BADGES).forEach(function (id) {
+        if (gagnes[id] && !prof.badges[id]) {
+          prof.badges[id] = new Date().toLocaleDateString('fr-FR');
+          nouveaux.push(id);
+        }
+      });
+      ecrireProfil(prof);
+      return { gain: gain, niveauAvant: niveauAvant, niveauApres: niveauJoueur(prof.xp), nouveaux: nouveaux };
+    }
+
+    function majRecords() {
+      Object.keys(MODES).forEach(function (m) {
+        const r = lireRecord(m);
+        $('record-' + m).textContent = r > 0 ? '🏆 Record : ' + r : '';
+      });
+      afficherHistorique();
+      afficherProfil();
+      majBoutonCarnet();
+    }
+
+    // ---------- Mémoire : dernier cours + historique des parties ----------
+    function sauverCours() {
+      try { localStorage.setItem('sq-cours', $('cours').value); } catch (e) { /* tant pis */ }
+    }
+    function restaurerCours() {
+      try { $('cours').value = localStorage.getItem('sq-cours') || ''; } catch (e) { /* tant pis */ }
+    }
+    function lireHistorique() {
+      try {
+        const h = JSON.parse(localStorage.getItem('sq-historique') || '[]');
+        return Array.isArray(h) ? h : [];
+      } catch (e) { return []; }
+    }
+    function ajouterHistorique(entree) {
+      try {
+        const h = lireHistorique();
+        h.unshift(entree);
+        localStorage.setItem('sq-historique', JSON.stringify(h.slice(0, 8)));
+      } catch (e) { /* tant pis */ }
+    }
+    function afficherHistorique() {
+      const h = lireHistorique().filter(function (x) { return x && MODES[x.mode]; });
+      $('historique').classList.toggle('cache', h.length === 0);
+      const ul = $('liste-historique');
+      ul.textContent = '';
+      h.forEach(function (x) {
+        const cfg = MODES[x.mode];
+        ul.appendChild(el('li', '', x.date + ' · ' + cfg.icone + ' ' + cfg.nom + ' · ' + x.titre + ' · ' + x.score + '/' + x.total));
+      });
+    }
+
+    // ---------- Import de fichier (.txt ou .pdf) ----------
+    function chargerScript(url) {
+      return new Promise(function (ok, ko) {
+        const s = document.createElement('script');
+        s.src = url;
+        s.onload = ok;
+        s.onerror = function () { ko(new Error('script')); };
+        document.head.appendChild(s);
+      });
+    }
+
+    async function lirePdf(fichier) {
+      const base = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+      if (!window.pdfjsLib) await chargerScript(base + 'pdf.min.js');
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js';
+      const data = await fichier.arrayBuffer();
+      const pdf = await window.pdfjsLib.getDocument({ data: data }).promise;
+      let texte = '';
+      for (let i = 1; i <= pdf.numPages && texte.length < 8000; i++) {
+        const page = await pdf.getPage(i);
+        const contenu = await page.getTextContent();
+        texte += contenu.items.map(function (x) { return x.str; }).join(' ') + '\n';
+      }
+      return texte;
+    }
+
+    async function importerFichier(f) {
+      if (!f) return;
+      const msg = $('msg-fichier');
+      msg.textContent = 'Lecture du fichier...';
+      try {
+        let texte = /\.pdf$/i.test(f.name) ? await lirePdf(f) : await f.text();
+        texte = texte.replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim();
+        if (texte.length < 50) throw new Error('vide');
+        $('cours').value = texte;
+        sauverCours();
+        $('msg-cours').textContent = '';
+        msg.textContent = '✅ ' + f.name + ' importé (' + texte.length + ' caractères)' +
+          (texte.length > 6000 ? ' — seuls les 6000 premiers caractères seront utilisés.' : '');
+      } catch (err) {
+        msg.textContent = '❌ Impossible de lire ce fichier (un PDF scanné ou sans internet ne marche pas). Colle le texte à la main.';
+      }
+    }
+    $('fichier').addEventListener('change', function (e) {
+      importerFichier(e.target.files[0]);
+      e.target.value = '';
+    });
+    $('cours').addEventListener('dragover', function (e) { e.preventDefault(); });
+    $('cours').addEventListener('drop', function (e) {
+      e.preventDefault();
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) importerFichier(e.dataTransfer.files[0]);
+    });
+
+    function confettis() {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const emojis = ['🎉', '⭐', '✨', '🎊'];
+      for (let k = 0; k < 40; k++) {
+        const c = el('span', 'confetti', emojis[k % emojis.length]);
+        c.style.left = (Math.random() * 100) + 'vw';
+        c.style.animationDuration = (2.5 + Math.random() * 2) + 's';
+        c.style.animationDelay = (Math.random() * 0.8) + 's';
+        document.body.appendChild(c);
+        setTimeout(function () { c.remove(); }, 6500);
+      }
+    }
+
+    // ---------- Accueil ----------
+    function choisirMode(m) {
+      mode = m;
+      document.body.dataset.mode = m;
+      document.querySelectorAll('.mode').forEach(function (c) {
+        c.classList.toggle('selectionne', c.dataset.mode === m);
+        c.setAttribute('aria-pressed', c.dataset.mode === m ? 'true' : 'false');
+      });
+    }
+    document.querySelectorAll('.mode').forEach(function (c) {
+      c.setAttribute('tabindex', '0');
+      c.setAttribute('role', 'button');
+      c.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choisirMode(c.dataset.mode); }
+      });
+    });
+
+    document.querySelectorAll('.mode').forEach(function (c) {
+      c.addEventListener('click', function () { choisirMode(c.dataset.mode); });
+    });
+    document.querySelectorAll('.nb').forEach(function (b) {
+      b.addEventListener('click', function () {
+        nbQuestions = parseInt(b.dataset.nb, 10);
+        document.querySelectorAll('.nb').forEach(function (x) { x.classList.toggle('selectionne', x === b); });
+      });
+    });
+    $('btn-exemple').addEventListener('click', function () {
+      $('cours').value = COURS_EXEMPLE;
+      $('msg-cours').textContent = '';
+      sauverCours();
+    });
+    $('cours').addEventListener('input', sauverCours);
+    $('btn-effacer').addEventListener('click', function () {
+      try { localStorage.removeItem('sq-historique'); } catch (e) { /* tant pis */ }
+      afficherHistorique();
+    });
+    function basculerSon() {
+      sonActif = !sonActif;
+      $('btn-son').textContent = sonActif ? '🔊' : '🔇';
+      $('btn-son').setAttribute('aria-pressed', sonActif ? 'false' : 'true');
+      if (typeof salle !== 'undefined' && salle && salle.reglerSon) salle.reglerSon(sonActif);
+    }
+    $('btn-son').addEventListener('click', basculerSon);
+    $('btn-carnet').addEventListener('click', afficherCarnet);
+    function marquerNiveau() {
+      document.querySelectorAll('.niv').forEach(function (b) {
+        b.classList.toggle('selectionne', b.dataset.niveau === niveau);
+      });
+    }
+    document.querySelectorAll('.niv').forEach(function (b) {
+      b.addEventListener('click', function () {
+        niveau = b.dataset.niveau;
+        try { localStorage.setItem('sq-niveau', niveau); } catch (e) { /* tant pis */ }
+        marquerNiveau();
+      });
+    });
+    marquerNiveau();
+
+    // vue de jeu : classique ou 3D (la 3D n'est pas proposée sur écran tactile)
+    try { vue3d = !tactile && localStorage.getItem('sq-vue') === '3d'; } catch (e) { /* tant pis */ }
+    if (tactile) $('bloc-vue').classList.add('cache');
+    function marquerVue() {
+      const b = $('btn-3d');
+      b.classList.toggle('selectionne', vue3d);
+      b.setAttribute('aria-pressed', vue3d ? 'true' : 'false');
+      b.textContent = vue3d ? '🧊 Exploration 3D : activée' : '🧊 Exploration 3D : désactivée';
+    }
+    $('btn-3d').addEventListener('click', function () {
+      vue3d = !vue3d;
+      try { localStorage.setItem('sq-vue', vue3d ? '3d' : 'classique'); } catch (e) { /* tant pis */ }
+      marquerVue();
+    });
+    marquerVue();
+    // pour les tests (?debug) : les menus repliés sont ouverts d'office
+    if (location.search.indexOf('debug') >= 0) {
+      $('options').open = true;
+      $('historique').open = true;
+    }
+
+    $('btn-lancer').addEventListener('click', function () { lancerAvec(null); });
+    $('btn-reessayer').addEventListener('click', function () { lancerAvec(dernierFocus); });
+    $('btn-demo').addEventListener('click', lancerDemo);
+    $('btn-demo-erreur').addEventListener('click', lancerDemo);
+    $('btn-retour').addEventListener('click', function () { majRecords(); montrer('ecran-accueil'); });
+    choisirMode('enquete');
+    restaurerCours();
+    majRecords();
+
+    // ---------- Clavier : A B C D (ou 1 2 3 4) pour répondre, Entrée pour continuer ----------
+    document.addEventListener('keydown', function (e) {
+      const tag = e.target && e.target.tagName;
+      if (tag === 'TEXTAREA' || tag === 'INPUT') return;
+      if (e.key === 'm' || e.key === 'M') { basculerSon(); return; }
+      if ($('ecran-jeu').classList.contains('cache') || !partie) return;
+      if (e.key === 'Enter') {
+        const s = $('btn-suivant');
+        if (s && !s.classList.contains('cache')) { e.preventDefault(); s.click(); }
+        return;
+      }
+      const idx = ['a', 'b', 'c', 'd', '1', '2', '3', '4'].indexOf(e.key.toLowerCase());
+      if (idx >= 0 && !partie.verrou) {
+        const b = document.querySelectorAll('#choix .choix-btn')[idx % 4];
+        if (b && !b.disabled) b.click();
+      }
+    });
+
+    function lancerDemo() {
+      demarrer(construireDemo(mode), true);
+    }
+
+    function lancer() { return lancerAvec(null); }
+
+    function arreterAttente() {
+      if (minuteur) { clearInterval(minuteur); minuteur = null; }
+    }
+
+    function demarrerAttente() {
+      arreterAttente();
+      let sec = 0;
+      let k = Math.floor(Math.random() * CONSEILS.length);
+      $('compteur-attente').textContent = '0 s';
+      $('conseil-attente').textContent = '💡 ' + CONSEILS[k];
+      $('msg-long').classList.add('cache');
+      $('btn-demo-attente').classList.add('cache');
+      minuteur = setInterval(function () {
+        sec++;
+        $('compteur-attente').textContent = sec + ' s';
+        if (sec % 5 === 0) {
+          k = (k + 1) % CONSEILS.length;
+          $('conseil-attente').textContent = '💡 ' + CONSEILS[k];
+        }
+        if (sec >= 90) {
+          $('msg-long').classList.remove('cache');
+          $('btn-demo-attente').classList.remove('cache');
+        }
+      }, 1000);
+    }
+
+    $('btn-annuler').addEventListener('click', function () {
+      if (controleur) controleur.abort();
+      arreterAttente();
+      majRecords();
+      montrer('ecran-accueil');
+    });
+    $('btn-demo-attente').addEventListener('click', function () {
+      if (controleur) controleur.abort();
+      arreterAttente();
+      lancerDemo();
+    });
+
+    async function attendreResultat(id, signal) {
+      const fin = Date.now() + 300000;
+      while (Date.now() < fin) {
+        await new Promise(function (ok, ko) {
+          const t = setTimeout(ok, 2000);
+          signal.addEventListener('abort', function () {
+            clearTimeout(t);
+            ko(new DOMException('Annulé', 'AbortError'));
+          }, { once: true });
+        });
+        const r = await fetch('/api/resultat?id=' + encodeURIComponent(id), { signal: signal });
+        const d = await r.json().catch(function () { return null; });
+        if (!d) continue;
+        if (d.statut === 'erreur') throw new Error(d.error || "L'IA n'a pas réussi à préparer le jeu.");
+        if (d.statut === 'ok' && d.jeu) return d.jeu;
+      }
+      throw new Error("L'IA a mis trop de temps à répondre. Réessaie dans un instant.");
+    }
+
+    async function lancerAvec(focus) {
+      dernierFocus = focus;
+      const cours = $('cours').value.trim();
+      if (cours.length < 200) {
+        $('msg-cours').textContent = 'Ton cours est trop court : colle au moins 200 caractères (quelques phrases).';
+        montrer('ecran-accueil');
+        return;
+      }
+      $('msg-cours').textContent = '';
+      $('texte-chargement').textContent = focus ? "L'IA prépare tes questions de révision..." : MODES[mode].chargement;
+      demarrerAttente();
+      montrer('ecran-chargement');
+      controleur = new AbortController();
+      try {
+        const id = 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+        const rep = await fetch('/api/generer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controleur.signal,
+          body: JSON.stringify({ id: id, cours: cours, mode: mode, nb: nbQuestions, niveau: niveau, focus: focus || undefined })
+        });
+        let data = null;
+        if (rep.status === 202) {
+          // sur Netlify : le travail se fait en arrière-plan, on vient chercher le résultat
+          data = await attendreResultat(id, controleur.signal);
+        } else {
+          data = await rep.json().catch(function () { return null; });
+          if (!rep.ok || !data) {
+            throw new Error((data && data.error) || 'Le serveur a répondu avec une erreur.');
+          }
+        }
+        arreterAttente();
+        demarrer(data, false, focus);
+      } catch (e) {
+        arreterAttente();
+        if (e && e.name === 'AbortError') return; // l'élève a annulé : pas de message d'erreur
+        if (e instanceof TypeError) {
+          $('texte-erreur').textContent = "Impossible de joindre le serveur. Vérifie ta connexion internet (en local : le serveur doit tourner avec node server.js).";
+        } else {
+          $('texte-erreur').textContent = e.message || 'Une erreur est survenue.';
+        }
+        montrer('ecran-erreur');
+      }
+    }
+
+    // ---------- Partie ----------
+    function demarrer(data, demo, focus) {
+      partie = {
+        mode: mode,
+        demo: demo,
+        focus: focus || null,
+        vue3d: false,
+        faites: [],
+        introVue: false,
+        note: '',
+        carnetAjouts: 0,
+        carnetRetires: 0,
+        titre: data.titre,
+        intro: data.intro,
+        missions: data.missions,
+        notions: data.notions || [],
+        i: 0, score: 0, scoreAffiche: 0,
+        essais: 0, verrou: false, perdu: false,
+        vies: 3, rep: 50, ratees: []
+      };
+      if (vue3d && !tactile) {
+        partie.vue3d = true;
+        entrer3D();
+      } else {
+        afficherMission();
+      }
+    }
+
+    function afficherMission() {
+      const p = partie;
+      const m = p.missions[p.i];
+      const cfg = MODES[p.mode];
+      p.essais = 0;
+      p.verrou = false;
+
+      const zone = $('ecran-jeu');
+      zone.textContent = '';
+
+      const scene = el('div', 'scene');
+      cfg.scene.forEach(function (e, k) {
+        const s = el('span', '', e);
+        s.style.animationDelay = (k * 0.4) + 's';
+        scene.appendChild(s);
+      });
+      zone.appendChild(scene);
+
+      if (p.note) {
+        zone.appendChild(el('p', 'astuce', 'ℹ️ ' + p.note));
+        p.note = '';
+      }
+
+      const barre = el('div', 'barre');
+      barre.id = 'barre';
+      zone.appendChild(barre);
+
+      const prog = el('div', 'progres');
+      const rempli = el('div', 'progres-rempli');
+      rempli.id = 'progres-rempli';
+      prog.appendChild(rempli);
+      zone.appendChild(prog);
+
+      if (p.i === 0 && !p.vue3d) {
+        const intro = el('div', 'intro');
+        intro.appendChild(el('h2', '', p.titre));
+        intro.appendChild(el('p', '', p.intro));
+        zone.appendChild(intro);
+      }
+
+      const carte = el('div', 'scenario');
+      carte.appendChild(el('div', 'etiquette', cfg.etiquette));
+      carte.appendChild(el('p', '', m.scenario));
+      zone.appendChild(carte);
+
+      zone.appendChild(el('h2', 'question', m.question));
+
+      const liste = el('div', 'choix');
+      liste.id = 'choix';
+      const lettres = ['A', 'B', 'C', 'D'];
+      m.choix.forEach(function (c, idx) {
+        const bt = el('button', 'choix-btn');
+        bt.appendChild(el('span', 'lettre', lettres[idx]));
+        bt.appendChild(el('span', '', c));
+        bt.addEventListener('click', function () { repondre(idx, bt); });
+        liste.appendChild(bt);
+      });
+      zone.appendChild(liste);
+      zone.appendChild(el('p', 'astuce', '⌨️ Astuce : touches A, B, C, D pour répondre · Entrée pour continuer'));
+
+      const fb = el('div', 'feedback vide');
+      fb.id = 'feedback';
+      fb.setAttribute('aria-live', 'polite');
+      zone.appendChild(fb);
+
+      const suiv = el('button', 'btn cache');
+      suiv.id = 'btn-suivant';
+      suiv.addEventListener('click', suite);
+      zone.appendChild(suiv);
+
+      majBarre();
+      montrer('ecran-jeu');
+    }
+
+    function majBarre() {
+      const p = partie;
+      const cfg = MODES[p.mode];
+      const n = p.missions.length;
+      const barre = $('barre');
+      barre.textContent = '';
+
+      barre.appendChild(el('div', '', cfg.icone + ' ' + cfg.mot + ' ' + Math.min(p.i + 1, n) + '/' + n));
+
+      if (p.mode === 'survie') {
+        const v = el('div', '');
+        for (let k = 0; k < 3; k++) {
+          v.appendChild(el('span', 'coeur', k < p.vies ? '❤️' : '🖤'));
+        }
+        barre.appendChild(v);
+      }
+
+      if (p.mode === 'strategie') {
+        const j = el('div', 'jauge');
+        j.appendChild(el('span', '', 'Réputation'));
+        const cadre = el('div', 'jauge-cadre');
+        const r = el('div', 'jauge-rempli');
+        r.style.width = p.rep + '%';
+        cadre.appendChild(r);
+        j.appendChild(cadre);
+        j.appendChild(el('span', '', String(p.rep)));
+        barre.appendChild(j);
+      }
+
+      if (p.mode === 'aventure') {
+        const ch = el('div', 'chemin');
+        for (let k = 0; k < n; k++) {
+          const fait = p.vue3d ? p.faites.indexOf(k) >= 0 : (k < p.i || (k === p.i && p.verrou));
+          const classe = 'etape' + (fait ? ' faite' : (k === p.i ? ' en-cours' : ''));
+          ch.appendChild(el('span', classe, fait ? '★' : '●'));
+          if (k < n - 1) ch.appendChild(el('span', 'trait'));
+        }
+        barre.appendChild(ch);
+      }
+
+      const s = el('div', 'b-score');
+      s.appendChild(document.createTextNode('Score : '));
+      const val = el('span', '', String(p.scoreAffiche));
+      val.id = 'score-val';
+      s.appendChild(val);
+      barre.appendChild(s);
+
+      const fini = p.vue3d ? p.faites.length : p.i + (p.verrou ? 1 : 0);
+      $('progres-rempli').style.width = Math.round((fini / n) * 100) + '%';
+
+      animerScore();
+    }
+
+    function animerScore() {
+      const p = partie;
+      const depart = p.scoreAffiche;
+      const cible = p.score;
+      if (depart === cible) return;
+      const t0 = performance.now();
+      function pas(t) {
+        const k = Math.min((t - t0) / 600, 1);
+        p.scoreAffiche = Math.round(depart + (cible - depart) * k);
+        const v = $('score-val');
+        if (v) v.textContent = String(p.scoreAffiche);
+        if (k < 1) requestAnimationFrame(pas);
+      }
+      requestAnimationFrame(pas);
+    }
+
+    function montrerFeedback(type, titre, texte) {
+      const fb = $('feedback');
+      fb.className = 'feedback ' + type;
+      fb.textContent = '';
+      fb.appendChild(el('strong', '', titre));
+      fb.appendChild(el('span', '', texte));
+    }
+
+    function bloquer(reveler) {
+      const m = partie.missions[partie.i];
+      document.querySelectorAll('#choix .choix-btn').forEach(function (b, idx) {
+        b.disabled = true;
+        if (reveler && idx === m.bonne_reponse) b.classList.add('bon');
+      });
+    }
+
+    function boutonSuivant() {
+      const p = partie;
+      const b = $('btn-suivant');
+      const dernier = p.perdu || (p.vue3d ? p.faites.length >= p.missions.length : p.i >= p.missions.length - 1);
+      b.textContent = dernier ? 'Voir le bilan' : (p.vue3d ? '🧊 Retourner dans la salle' : MODES[p.mode].mot + ' suivante');
+      b.classList.remove('cache');
+    }
+
+    function repondre(idx, btn) {
+      const p = partie;
+      if (p.verrou) return;
+      const m = p.missions[p.i];
+      p.essais++;
+
+      if (idx === m.bonne_reponse) {
+        p.verrou = true;
+        btn.classList.add('bon');
+        const pts = p.essais === 1 ? 100 : (p.essais === 2 ? 50 : 20);
+        p.score += pts;
+        if (p.vue3d && p.faites.indexOf(p.i) < 0) p.faites.push(p.i);
+        if (p.mode === 'strategie') p.rep = Math.min(100, p.rep + (p.essais === 1 ? 20 : 10));
+        bloquer(false);
+        bip(SONS.bon);
+        montrerFeedback('bon', '✅ Bien joué ! +' + pts + ' points', m.explication);
+        boutonSuivant();
+      } else {
+        btn.classList.add('mauvais');
+        btn.disabled = true;
+        bip(SONS.mauvais);
+        if (p.essais === 1) {
+          p.ratees.push(m.question);
+          if (!p.demo) {
+            const nouveau = ajouterAuCarnet({ question: m.question, explication: m.explication, notion: p.titre, date: new Date().toLocaleDateString('fr-FR') });
+            if (nouveau) p.carnetAjouts++;
+          }
+        }
+        let bonus = '';
+        if (p.mode === 'survie') { p.vies--; bonus = ' (−1 cœur)'; }
+        if (p.mode === 'strategie') { p.rep = Math.max(0, p.rep - 15); bonus = ' (−15 réputation)'; }
+
+        if (p.mode === 'survie' && p.vies <= 0) {
+          p.verrou = true;
+          p.perdu = true;
+          for (let k = p.i + 1; k < p.missions.length; k++) p.ratees.push(p.missions[k].question);
+          bloquer(true);
+          montrerFeedback('mauvais', '💀 Plus de cœurs ! La partie est finie.', m.explication);
+          boutonSuivant();
+        } else {
+          montrerFeedback('mauvais', '❌ Pas tout à fait…' + bonus, 'Indice : ' + m.indice);
+        }
+      }
+      majBarre();
+    }
+
+    function suite() {
+      const p = partie;
+      const n = p.missions.length;
+      if (p.vue3d) {
+        if (p.perdu || p.faites.length >= n) finale();
+        else retour3D();
+        return;
+      }
+      if (p.perdu || p.i >= n - 1) {
+        finale();
+      } else {
+        p.i++;
+        while (p.i < n - 1 && p.faites.indexOf(p.i) >= 0) p.i++;
+        afficherMission();
+      }
+    }
+
+    // ---------- Exploration 3D ----------
+    function fermer3D() {
+      if (salle) {
+        try { salle.detruire(); } catch (e) { /* tant pis */ }
+        salle = null;
+      }
+    }
+
+    function messageErreur3D(e) {
+      const detail = String((e && e.message) || e || '').slice(0, 140);
+      if (/dynamically imported|Failed to fetch|module|three/i.test(detail)) {
+        return "La 3D n'est pas installée sur cet ordinateur : tape « npm install » dans le terminal, relance le serveur, puis réessaie. En attendant, voici la version classique.";
+      }
+      return "La 3D n'a pas pu démarrer sur cet appareil (" + detail + "). Voici la version classique.";
+    }
+
+    function repliClassique(raison) {
+      const p = partie;
+      fermer3D();
+      p.vue3d = false;
+      p.note = raison || '';
+      let k = 0;
+      while (k < p.missions.length - 1 && p.faites.indexOf(k) >= 0) k++;
+      p.i = k;
+      afficherMission();
+    }
+
+    function majInfo3D() {
+      const p = partie;
+      const cfg = MODES[p.mode];
+      $('info3d').textContent = cfg.icone + ' ' + cfg.nom + ' · ' + p.faites.length + '/' + p.missions.length + ' terminé(s) · Score : ' + p.score;
+    }
+
+    function majInvite3D(i) {
+      const inv = $('invite3d');
+      if (i === null || i === undefined) {
+        inv.classList.add('cache');
+        return;
+      }
+      const lieu = salle && salle.stationsPos ? salle.stationsPos()[i] : null;
+      inv.textContent = 'Appuie sur E (ou clique) pour ouvrir : ' + (lieu ? lieu.libelle : MODES[partie.mode].mot + ' ' + (i + 1));
+      inv.classList.remove('cache');
+    }
+
+    function majBloc3D(verrouille) {
+      const p = partie;
+      if (!p) return;
+      if (verrouille) p.introVue = true;
+      const debut = p.faites.length === 0 && !p.introVue;
+      $('bloc3d').classList.toggle('cache', !!verrouille);
+      const surIle = p.mode === 'aventure';   // les autres modes auront leur île plus tard
+      $('titre3d').textContent = debut ? p.titre : (surIle ? 'L’île d’Aventure' : 'Salle d’exploration');
+      $('intro3d').textContent = debut ? p.intro : 'Clique pour reprendre ta visite.';
+      $('btn-entrer3d').textContent = debut ? (surIle ? 'Cliquer pour explorer l’île' : 'Cliquer pour entrer dans la salle') : 'Cliquer pour reprendre';
+      $('btn-classique3d').classList.toggle('cache', p.faites.length > 0);
+    }
+
+    async function entrer3D() {
+      const p = partie;
+      try {
+        if (!module3d) module3d = await import('/salle3d.js');
+        montrer('ecran-3d');
+        fermer3D();
+        $('scene3d').textContent = '';
+        salle = module3d.creerSalle($('scene3d'), {
+          theme: p.mode,
+          son: sonActif,
+          stations: p.missions.map(function (m, i) {
+            return { libelle: MODES[p.mode].mot + ' ' + (i + 1), fait: p.faites.indexOf(i) >= 0 };
+          }),
+          onOuvrir: ouvrirStation,
+          onProche: majInvite3D,
+          onVerrou: majBloc3D,
+          onErreur: function (e) { repliClassique(messageErreur3D(e)); }
+        });
+        majBloc3D(false);
+        majInvite3D(null);
+        majInfo3D();
+        salle.demarrer();
+        if (window.location.search.indexOf('debug') >= 0) window.__salle = salle;
+      } catch (e) {
+        repliClassique(messageErreur3D(e));
+      }
+    }
+
+    function ouvrirStation(i) {
+      const p = partie;
+      if (!p || !salle || p.faites.indexOf(i) >= 0) return;
+      salle.pause();
+      p.i = i;
+      afficherMission();
+    }
+
+    function retour3D() {
+      const p = partie;
+      montrer('ecran-3d');
+      salle.marquerFaite(p.i);
+      majInfo3D();
+      majInvite3D(null);
+      majBloc3D(false);
+      salle.reprendre();
+    }
+
+    $('btn-entrer3d').addEventListener('click', function () { if (salle) salle.capturer(); });
+    $('btn-classique3d').addEventListener('click', function () { if (partie && partie.faites.length === 0) repliClassique(''); });
+    $('btn-quitter3d').addEventListener('click', function () {
+      if (confirm('Quitter la partie en cours ?')) {
+        fermer3D();
+        majRecords();
+        montrer('ecran-accueil');
+      }
+    });
+
+    // ---------- Bilan ----------
+    function finale() {
+      fermer3D();
+      const p = partie;
+      const n = p.missions.length;
+      const ratio = p.score / (100 * n);
+      const nb = p.perdu ? 1 : (ratio >= 0.8 ? 3 : (ratio >= 0.5 ? 2 : 1));
+
+      const ancien = lireRecord(p.mode);
+      const nouveauRecord = p.score > ancien;
+      if (nouveauRecord) ecrireRecord(p.mode, p.score);
+      ajouterHistorique({ date: new Date().toLocaleDateString('fr-FR'), mode: p.mode, titre: p.titre, score: p.score, total: 100 * n });
+
+      const zone = $('ecran-final');
+      zone.textContent = '';
+      zone.appendChild(el('h1', '', p.perdu ? 'Partie terminée' : 'Bravo !'));
+
+      const et = el('div', 'etoiles');
+      for (let k = 0; k < 3; k++) {
+        const s = el('span', 'etoile ' + (k < nb ? 'pleine' : 'vide'), k < nb ? '★' : '☆');
+        s.style.animationDelay = (0.3 + k * 0.4) + 's';
+        et.appendChild(s);
+      }
+      zone.appendChild(et);
+
+      zone.appendChild(el('p', 'gros-score', 'Score : ' + p.score + ' / ' + (100 * n)));
+
+      const g = gagnerXp(p, nb);
+      zone.appendChild(el('p', 'gain-xp', '+' + g.gain + ' XP'));
+      if (g.niveauApres > g.niveauAvant) {
+        zone.appendChild(el('p', 'nouveau-record', '⬆️ Niveau ' + g.niveauApres + ' !'));
+      }
+      g.nouveaux.forEach(function (id) {
+        const bd = BADGES[id];
+        zone.appendChild(el('div', 'carte-badge', '🏅 Nouveau badge : ' + bd.icone + ' ' + bd.nom + ' — ' + bd.desc));
+      });
+      if (nouveauRecord && p.score > 0) {
+        zone.appendChild(el('p', 'nouveau-record', '🏆 Nouveau record !'));
+      } else if (ancien > 0) {
+        zone.appendChild(el('p', 'doux', '🏆 Ton record dans ce mode : ' + ancien));
+      }
+
+      if (p.focus && !p.perdu && p.ratees.length === 0) {
+        p.carnetRetires = retirerDuCarnet(p.focus);
+      }
+      if (p.carnetAjouts > 0) {
+        zone.appendChild(el('p', 'doux', '📓 ' + p.carnetAjouts + ' question(s) ajoutée(s) à ton carnet'));
+      }
+      if (p.carnetRetires > 0) {
+        zone.appendChild(el('p', 'doux', '✅ ' + p.carnetRetires + ' point(s) retiré(s) de ton carnet : bravo !'));
+      }
+
+      const cols = el('div', 'colonnes');
+
+      const c1 = el('div', 'colonne');
+      c1.appendChild(el('h3', '', '✅ Notions travaillées'));
+      const l1 = el('ul');
+      if (p.notions.length === 0) l1.appendChild(el('li', '', p.titre));
+      p.notions.forEach(function (x) { l1.appendChild(el('li', '', x)); });
+      c1.appendChild(l1);
+      cols.appendChild(c1);
+
+      const c2 = el('div', 'colonne');
+      c2.appendChild(el('h3', '', '🔁 À retravailler'));
+      const l2 = el('ul');
+      if (p.ratees.length === 0) {
+        l2.appendChild(el('li', '', 'Rien ! Tout réussi du premier coup 🎉'));
+      } else {
+        p.ratees.forEach(function (x) { l2.appendChild(el('li', '', x)); });
+      }
+      c2.appendChild(l2);
+      cols.appendChild(c2);
+      zone.appendChild(cols);
+
+      if (!p.demo && p.ratees.length > 0) {
+        const br = el('button', 'btn', 'Réviser mes erreurs');
+        br.addEventListener('click', function () {
+          choisirMode(p.mode);
+          lancerAvec(p.ratees.slice(0, 5));
+        });
+        zone.appendChild(br);
+        zone.appendChild(el('br'));
+      }
+      const b1 = el('button', 'btn', 'Rejouer avec le même cours');
+      b1.addEventListener('click', function () { if (p.demo) { lancerDemo(); } else { lancerAvec(null); } });
+      zone.appendChild(b1);
+      zone.appendChild(el('br'));
+      const b2 = el('button', 'btn secondaire', 'Nouveau cours');
+      b2.addEventListener('click', function () {
+        $('cours').value = '';
+        sauverCours();
+        $('msg-fichier').textContent = '';
+        majRecords();
+        montrer('ecran-accueil');
+      });
+      zone.appendChild(b2);
+
+      montrer('ecran-final');
+
+      if (!p.perdu && nb >= 2) {
+        bip(SONS.victoire);
+        confettis();
+      } else {
+        bip(SONS.fin);
+      }
+    }
+  </script>
+</body>
+</html>
