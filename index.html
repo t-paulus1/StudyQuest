@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -71,6 +71,12 @@
       position: fixed; top: 12px; right: 12px; z-index: 60;
       width: 44px; height: 44px; border-radius: 50%; border: none;
       background: var(--carte); color: white; font-size: 20px; cursor: pointer;
+    }
+    .langue {
+      position: fixed; top: 12px; right: 64px; z-index: 60; height: 44px;
+      border-radius: 22px; border: 1px solid rgba(255,255,255,.28);
+      padding: 0 12px; background: var(--carte); color: white; font-weight: 700;
+      cursor: pointer;
     }
 
     textarea {
@@ -515,6 +521,12 @@
 </head>
 <body data-mode="enquete">
 
+  <label class="cache" for="select-langue" id="label-langue">Language</label>
+  <select id="select-langue" class="langue" aria-label="Language" title="Change language">
+    <option value="en">🇬🇧 EN</option>
+    <option value="fr">🇫🇷 FR</option>
+    <option value="es">🇪🇸 ES</option>
+  </select>
   <button id="btn-son" class="son" title="Son (touche M)" aria-label="Couper ou remettre le son" aria-pressed="false">🔊</button>
 
   <button id="btn-carnet" class="carnet-coin">📓 Mon carnet (0)</button>
@@ -632,7 +644,7 @@
       <div class="bloc3d-boite">
         <h2 id="titre3d"></h2>
         <p id="intro3d"></p>
-        <p class="astuce3d">🖱️ Souris : regarder · ZQSD / WASD / flèches : marcher · Maj : courir · Espace : sauter<br>E (ou clic) : ouvrir une mission · Tab : grande carte · M : couper le son · Échap : libérer la souris</p>
+    <p class="astuce3d"><span id="aide-mouvement">🖱️ Souris : regarder · ZQSD / WASD / flèches : marcher · Maj : courir · Espace : sauter</span><br><span id="aide-commandes">E (ou clic) : ouvrir une mission · Tab : grande carte · M : couper le son · Échap : libérer la souris</span></p>
         <button id="btn-entrer3d" class="btn">Cliquer pour entrer dans la salle</button><br>
         <button id="btn-classique3d" class="btn secondaire">Passer en version classique</button><br>
         <button id="btn-quitter3d" class="btn secondaire">Quitter la partie</button>
@@ -644,12 +656,139 @@
   <div id="ecran-carnet" class="ecran cache"></div>
 
   <script>
+    const TEXTES = {
+      en: {
+        'Son (touche M)':'Sound (press M)','Couper ou remettre le son':'Mute or unmute sound','📓 Mon carnet (0)':'📓 My notebook (0)',
+        'Transforme ton cours en aventure !':'Turn your lesson into an adventure!','1. Colle ton cours':'1. Paste your lesson','Colle ici le texte de ton cours (200 caractères minimum)... ou glisse un fichier .txt ou .pdf':'Paste your lesson here (at least 200 characters)… or drop a .txt or .pdf file',
+        '2. Choisis ton mode de jeu':'2. Choose a game mode','✅ Île 3D terminée':'✅ 3D island ready','🚧 Île 3D bientôt':'🚧 3D island coming soon','Aventure':'Adventure','Explore et avance dans une histoire':'Explore and progress through a story','Enquête':'Investigation','Résous un mystère avec des indices':'Solve a mystery using clues','Survie':'Survival','Prends les bonnes décisions':'Make the right decisions','Stratégie':'Strategy','Planifie et gère tes ressources':'Plan and manage your resources',
+        '🧊 Exploration 3D : désactivée':'🧊 3D exploration: off','🧊 Exploration 3D : activée':'🧊 3D exploration: on','Lancer le jeu':'Start game','⚙️ Options':'⚙️ Options','Nombre de questions':'Number of questions','3 · rapide':'3 · quick','5 · complet':'5 · full','Ton niveau':'Your level','Collège':'Middle school','Lycée':'High school','Supérieur':'University','Outils':'Tools','📄 Importer un fichier':'📄 Upload a file',"Cours d'exemple":'Sample lesson','Démo sans IA':'No-AI demo','📚 Historique des parties':'📚 Game history','Effacer l’historique':'Clear history','🧊 Exploration 3D : Three.js (MIT), inspirée du first-person-starter-kit d’Augusto Polonio (MIT).':'🧊 3D exploration: Three.js (MIT), inspired by Augusto Polonio’s first-person-starter-kit (MIT).',
+        'Ça peut prendre jusqu’à une minute.':'This can take up to a minute.','Ça peut prendre jusqu\'à une minute.':'This can take up to a minute.','Ça prend du temps... tu peux jouer à la démo sans IA.':'Taking a while… you can play the no-AI demo.','Jouer à la démo (sans IA)':'Play the no-AI demo','Annuler':'Cancel','Oups…':'Oops…','Réessayer':'Try again','Retour à l’accueil':'Back to home','Retour à l\'accueil':'Back to home',
+        '🖱️ Souris : regarder · ZQSD / WASD / flèches : marcher · Maj : courir · Espace : sauter':'🖱️ Mouse: look · WASD / arrow keys: move · Shift: run · Space: jump','E (ou clic) : ouvrir une mission · Tab : grande carte · M : couper le son · Échap : libérer la souris':'E (or click): open a mission · Tab: map · M: mute · Esc: release mouse','Cliquer pour entrer dans la salle':'Click to enter the room','Passer en version classique':'Switch to classic mode','Quitter la partie':'Quit game',
+        'Ton carnet est vide : continue de jouer, tes erreurs apparaîtront ici.':'Your notebook is empty. Keep playing and missed questions will appear here.','Voir l’explication':'Show explanation','Cacher l’explication':'Hide explanation','Réviser mon carnet':'Review my notebook','Vider le carnet':'Clear notebook','Retour':'Back','Pour réviser, colle d’abord ton cours sur la page d’accueil (au moins 200 caractères), puis reviens ici.':'To review, first paste your lesson on the home page (at least 200 characters), then come back here.','Vider tout ton carnet ?':'Clear your entire notebook?','Effacer ton pseudo, ton XP et tes badges ?':'Reset your nickname, XP, and badges?',
+        'Premier pas':'First Steps','Terminer ta première partie':'Finish your first game','Trois étoiles':'Three Stars','Obtenir 3 étoiles':'Earn 3 stars','Sans faute':'Perfect Run','Réussir toutes les questions du premier coup':'Answer every question correctly on the first try','Explorateur':'Explorer','Jouer les 4 modes':'Play all 4 modes','Marathon':'Marathon','Terminer une partie à 5 questions':'Finish a 5-question game','Survivant':'Survivor','Terminer une partie de Survie sans perdre':'Finish a Survival game without losing','Niveau':'Level','vers le niveau':'XP to level','🏅 Mes badges':'🏅 My badges','Réinitialiser mon profil':'Reset my profile','Record':'Best score','Lecture du fichier...':'Reading file…','importé':'imported','caractères':'characters','Impossible de lire ce fichier (un PDF scanné ou sans internet ne marche pas). Colle le texte à la main.':'Could not read this file (scanned PDFs and offline files are not supported). Paste the text instead.',
+        'Ça prend du temps... tu peux jouer à la démo sans IA.':'Taking a while… you can play the no-AI demo.','Relire un cours le lendemain aide beaucoup plus que le relire 10 fois d’un coup.':'Reviewing a lesson the next day helps more than rereading it ten times in a row.','Relire un cours le lendemain aide beaucoup plus que le relire 10 fois d\'un coup.':'Reviewing a lesson the next day helps more than rereading it ten times in a row.','Se tester soi-même (comme ici !) fait mieux retenir que relire.':'Testing yourself (like this!) helps you remember more than rereading.','Explique la notion à voix haute, comme si tu l’apprenais à quelqu’un.':'Explain the idea out loud as if you were teaching someone.','Dors bien : le cerveau classe ce que tu as appris pendant la nuit.':'Get enough sleep: your brain organizes what you learned overnight.','Révise par petites séances de 25 minutes, avec une vraie pause entre deux.':'Study in short 25-minute sessions, with a real break between them.','Se tromper est utile : une erreur corrigée reste mieux en mémoire.':'Mistakes help: corrected mistakes are easier to remember.','Commence par ce qui est le plus difficile, quand tu es encore frais.':'Start with the hardest topic while your mind is fresh.','Dessine un petit schéma : une image se retient mieux qu’un long texte.':'Draw a quick diagram: pictures are easier to remember than long text.',
+        'Ton cours est trop court : colle au moins 200 caractères (quelques phrases).':'Your lesson is too short. Paste at least 200 characters (a few sentences).','L’IA prépare tes questions de révision...':'AI is preparing your review questions…','L\'IA prépare tes questions de révision...':'AI is preparing your review questions…','Impossible de joindre le serveur. Vérifie ta connexion internet (en local : le serveur doit tourner avec node server.js).':'Could not reach the server. Check your internet connection. When running locally, start the server with node server.js.','L’IA n’a pas réussi à préparer le jeu. Réessaie dans un instant.':'AI could not prepare the game. Please try again shortly.','L\'IA n\'a pas réussi à préparer le jeu. Réessaie dans un instant.':'AI could not prepare the game. Please try again shortly.','Le serveur a répondu avec une erreur.':'The server returned an error.','Requête invalide.':'Invalid request.','Une erreur est survenue.':'Something went wrong.','Doucement ! Réessaie dans une minute.':'Too many requests. Please try again in a minute.','Réputation':'Reputation','Bien joué !':'Nice work!','Pas tout à fait…':'Not quite…','Indice :':'Hint:','Plus de cœurs ! La partie est finie.':'Out of hearts! Game over.','Voir le bilan':'View results','Partie terminée':'Game over','Bravo !':'Well done!','Score':'Score','Nouveau badge :':'New badge:','Nouveau record !':'New high score!','Notions travaillées':'Topics covered','À retravailler':'Review these','Rien ! Tout réussi du premier coup 🎉':'Nothing! You got everything right on the first try 🎉','Réviser mes erreurs':'Review my mistakes','Rejouer avec le même cours':'Play again with the same lesson','Nouveau cours':'New lesson','Quitter la partie en cours ?':'Quit the current game?','L’île d’Aventure':'Adventure Island','Salle d’exploration':'Exploration room','Clique pour reprendre ta visite.':'Click to resume exploring.','Cliquer pour explorer l’île':'Click to explore the island','Cliquer pour entrer dans la salle':'Click to enter the room','Cliquer pour reprendre':'Click to resume','Appuie sur E (ou clique) pour ouvrir :':'Press E (or click) to open:','terminé(s)':'complete','Mission':'Mission','Étape':'Stage','Épreuve':'Challenge','Décision':'Decision','À réviser':'To review','📁 DOSSIER CONFIDENTIEL':'📁 CASE FILE','📜 LE RÉCIT':'📜 THE STORY','⚠️ SITUATION D\'URGENCE':'⚠️ EMERGENCY','📊 RAPPORT DE SITUATION':'📊 SITUATION REPORT','Astuce : touches A, B, C, D pour répondre · Entrée pour continuer':'Tip: press A, B, C, or D to answer · Enter to continue','Reviser mes erreurs':'Review my mistakes','Ton record dans ce mode :':'Your best score in this mode:',' questions ajoutée(s) à ton carnet':' question(s) added to your notebook',' point(s) retiré(s) de ton carnet : bravo !':' point(s) removed from your notebook.'
+      },
+      es: {
+        'Son (touche M)':'Sonido (tecla M)','Couper ou remettre le son':'Silenciar o activar el sonido','📓 Mon carnet (0)':'📓 Mi cuaderno (0)','Transforme ton cours en aventure !':'¡Convierte tu lección en una aventura!','1. Colle ton cours':'1. Pega tu lección','Colle ici le texte de ton cours (200 caractères minimum)... ou glisse un fichier .txt ou .pdf':'Pega aquí el texto de tu lección (mínimo 200 caracteres)… o arrastra un archivo .txt o .pdf','2. Choisis ton mode de jeu':'2. Elige un modo de juego','✅ Île 3D terminée':'✅ Isla 3D lista','🚧 Île 3D bientôt':'🚧 Isla 3D próximamente','Aventure':'Aventura','Explore et avance dans une histoire':'Explora y avanza en una historia','Enquête':'Investigación','Résous un mystère avec des indices':'Resuelve un misterio con pistas','Survie':'Supervivencia','Prends les bonnes décisions':'Toma las decisiones correctas','Stratégie':'Estrategia','Planifie et gère tes ressources':'Planifica y administra tus recursos','🧊 Exploration 3D : désactivée':'🧊 Exploración 3D: desactivada','🧊 Exploration 3D : activée':'🧊 Exploración 3D: activada','Lancer le jeu':'Iniciar juego','⚙️ Options':'⚙️ Opciones','Nombre de questions':'Número de preguntas','3 · rapide':'3 · rápido','5 · complet':'5 · completo','Ton niveau':'Tu nivel','Collège':'Secundaria','Lycée':'Bachillerato','Supérieur':'Universidad','Outils':'Herramientas','📄 Importer un fichier':'📄 Subir archivo',"Cours d'exemple":'Lección de ejemplo','Démo sans IA':'Demostración sin IA','📚 Historique des parties':'📚 Historial de partidas','Effacer l’historique':'Borrar historial','Effacer l\'historique':'Borrar historial','Ça peut prendre jusqu’à une minute.':'Esto puede tardar hasta un minuto.','Ça peut prendre jusqu\'à une minute.':'Esto puede tardar hasta un minuto.','Ça prend du temps... tu peux jouer à la démo sans IA.':'Está tardando. Puedes jugar la demo sin IA.','Jouer à la démo (sans IA)':'Jugar la demo sin IA','Annuler':'Cancelar','Oups…':'¡Vaya!','Réessayer':'Intentar de nuevo','Retour à l’accueil':'Volver al inicio','Retour à l\'accueil':'Volver al inicio','Voir l’explication':'Ver explicación','Cacher l’explication':'Ocultar explicación','Réviser mon carnet':'Repasar mi cuaderno','Vider le carnet':'Vaciar cuaderno','Retour':'Volver','Pour réviser, colle d’abord ton cours sur la page d’accueil (au moins 200 caractères), puis reviens ici.':'Para repasar, pega primero tu lección en la página de inicio (al menos 200 caracteres) y vuelve aquí.','Vider tout ton carnet ?':'¿Vaciar todo el cuaderno?','Effacer ton pseudo, ton XP et tes badges ?':'¿Borrar tu apodo, XP e insignias?','⚔️ Niveau ':'⚔️ Nivel ','🏅 Mes badges':'🏅 Mis insignias','Réinitialiser mon profil':'Restablecer mi perfil','Lecture du fichier...':'Leyendo archivo…','importé':'importado','caractères':'caracteres','Impossible de lire ce fichier (un PDF scanné ou sans internet ne marche pas). Colle le texte à la main.':'No se pudo leer este archivo (los PDF escaneados y el modo sin conexión no son compatibles). Pega el texto.','Ton cours est trop court : colle au moins 200 caractères (quelques phrases).':'Tu lección es demasiado corta. Pega al menos 200 caracteres (unas frases).','L’IA prépare tes questions de révision...':'La IA está preparando tus preguntas de repaso…','L\'IA prépare tes questions de révision...':'La IA está preparando tus preguntas de repaso…','Impossible de joindre le serveur. Vérifie ta connexion internet (en local : le serveur doit tourner avec node server.js).':'No se pudo conectar con el servidor. Comprueba tu conexión a internet.','Le serveur a répondu avec une erreur.':'El servidor respondió con un error.','Requête invalide.':'Solicitud no válida.','Une erreur est survenue.':'Se produjo un error.','Doucement ! Réessaie dans une minute.':'Demasiadas solicitudes. Inténtalo de nuevo en un minuto.','Réputation':'Reputación','Bien joué !':'¡Bien hecho!','Pas tout à fait…':'No exactamente…','Indice :':'Pista:','Plus de cœurs ! La partie est finie.':'¡Te has quedado sin corazones! Fin de la partida.','Voir le bilan':'Ver resultados','Partie terminée':'Partida terminada','Bravo !':'¡Enhorabuena!','Score':'Puntuación','Nouveau record !':'¡Nuevo récord!','Notions travaillées':'Temas practicados','À retravailler':'Para repasar','Rien ! Tout réussi du premier coup 🎉':'¡Nada! Todo correcto a la primera 🎉','Réviser mes erreurs':'Repasar mis errores','Rejouer avec le même cours':'Jugar otra vez con la misma lección','Nouveau cours':'Nueva lección','Quitter la partie en cours ?':'¿Salir de la partida actual?','L’île d’Aventure':'Isla de la Aventura','Salle d’exploration':'Sala de exploración','Clique pour reprendre ta visite.':'Haz clic para continuar explorando.','Cliquer pour explorer l’île':'Haz clic para explorar la isla','Cliquer pour entrer dans la salle':'Haz clic para entrar en la sala','Cliquer pour reprendre':'Haz clic para continuar','Appuie sur E (ou clique) pour ouvrir :':'Pulsa E (o haz clic) para abrir:','terminé(s)':'completadas','Mission':'Misión','Étape':'Etapa','Épreuve':'Desafío','Décision':'Decisión','📁 DOSSIER CONFIDENTIEL':'📁 EXPEDIENTE','📜 LE RÉCIT':'📜 EL RELATO','⚠️ SITUATION D\'URGENCE':'⚠️ EMERGENCIA','📊 RAPPORT DE SITUATION':'📊 INFORME DE SITUACIÓN','Astuce : touches A, B, C, D pour répondre · Entrée pour continuer':'Consejo: pulsa A, B, C o D para responder · Intro para continuar'
+      }
+    };
+    Object.assign(TEXTES.en, {
+      'Effacer l\'historique':'Clear history','Joueur':'Player','Ton pseudo':'Your nickname','Cours':'Lesson',
+      '🖱️ Souris : regarder · ZQSD / WASD / flèches : marcher · Maj : courir · Espace : sauter':'🖱️ Mouse: look · WASD / arrow keys: move · Shift: run · Space: jump',
+      'E (ou clic) : ouvrir une mission · Tab : grande carte · M : couper le son · Échap : libérer la souris':'E (or click): open a mission · Tab: map · M: mute · Esc: release the mouse',
+      '🧊 Exploration 3D : Three.js (MIT), inspirée du first-person-starter-kit d’Augusto Polonio (MIT).':'🧊 3D exploration: Three.js (MIT), inspired by Augusto Polonio’s first-person-starter-kit (MIT).'
+    });
+    Object.assign(TEXTES.es, {
+      '📄 Importer un fichier':'📄 Subir archivo','Effacer l\'historique':'Borrar historial','Joueur':'Jugador','Ton pseudo':'Tu apodo','Cours':'Lección','Ça prend du temps... tu peux jouer à la démo sans IA.':'Está tardando. Puedes jugar la demo sin IA.',
+      'Pour réviser, colle d’abord ton cours sur la page d’accueil (au moins 200 caractères), puis reviens ici.':'Para repasar, pega primero tu lección en la página de inicio (al menos 200 caracteres) y vuelve aquí.',
+      '⚔️ Niveau ':'⚔️ Nivel ','🏅 Mes badges':'🏅 Mis insignias','Réinitialiser mon profil':'Restablecer mi perfil','importé':'importado','caractères':'caracteres',
+      'Impossible de lire ce fichier (un PDF scanné ou sans internet ne marche pas). Colle le texte à la main.':'No se pudo leer este archivo (los PDF escaneados y el modo sin conexión no son compatibles). Pega el texto.',
+      'L\'IA prépare tes questions de révision...':'La IA está preparando tus preguntas de repaso…','Le serveur a répondu avec une erreur.':'El servidor respondió con un error.','Requête invalide.':'Solicitud no válida.','Doucement ! Réessaie dans une minute.':'Demasiadas solicitudes. Inténtalo de nuevo en un minuto.',
+      '🖱️ Souris : regarder · ZQSD / WASD / flèches : marcher · Maj : courir · Espace : sauter':'🖱️ Ratón: mirar · WASD / flechas: caminar · Mayús: correr · Espacio: saltar',
+      'E (ou clic) : ouvrir une mission · Tab : grande carte · M : couper le son · Échap : libérer la souris':'E (o clic): abrir una misión · Tab: mapa grande · M: silenciar · Esc: liberar el ratón',
+      '🧊 Exploration 3D : Three.js (MIT), inspirée du first-person-starter-kit d’Augusto Polonio (MIT).':'🧊 Exploración 3D: Three.js (MIT), inspirada en first-person-starter-kit de Augusto Polonio (MIT).'
+    });
+    let langue = 'en';
+    function dateLocale() { return new Date().toLocaleDateString({en:'en-US',fr:'fr-FR',es:'es-ES'}[langue] || 'en-US'); }
+    function traduireTexte(texte) {
+      if (typeof texte !== 'string') return texte;
+      const cle = texte.trim();
+      const direct = TEXTES[langue] && TEXTES[langue][cle];
+      if (direct) return direct;
+      if (langue === 'en') return texte
+        .replace(/^🏆 Record : /, '🏆 Best score: ').replace(/^Ton record dans ce mode : /, 'Your best score in this mode: ')
+        .replace(/^⚔️ Niveau /, '⚔️ Level ').replace(/ XP vers le niveau /, ' XP to level ')
+        .replace(/(\d+\/\d+) terminé\(s\) · Score : /, '$1 complete · Score: ')
+        .replace('🌟 Score : ', '🌟 Score: ').replace('Score : ', 'Score: ')
+        .replace(' · terminé(s)', ' · complete').replace(' · '+ ' · ', ' · ')
+        .replace(/ questions? ajoutée\(s\) à ton carnet/, ' question(s) added to your notebook')
+        .replace(/ point\(s\) retiré\(s\) de ton carnet : bravo !/, ' point(s) removed from your notebook. Great job!')
+        .replace(/^📓 Mon carnet \(/, '📓 My notebook (')
+        .replace(/^\+(.+) XP$/, '+$1 XP');
+      if (langue === 'es') return texte
+        .replace(/^🏆 Record : /, '🏆 Récord: ').replace(/^Ton record dans ce mode : /, 'Tu mejor puntuación en este modo: ')
+        .replace(/^⚔️ Niveau /, '⚔️ Nivel ').replace(/ XP vers le niveau /, ' XP para el nivel ')
+        .replace(/Score : /, 'Puntuación: ').replace(/ terminé\(s\)/, ' completadas')
+        .replace(/ questions? ajoutée\(s\) à ton carnet/, ' pregunta(s) añadida(s) al cuaderno')
+        .replace(/ point\(s\) retiré\(s\) de ton carnet : bravo !/, ' punto(s) retirado(s) del cuaderno. ¡Bien hecho!')
+        .replace(/^📓 Mon carnet \(/, '📓 Mi cuaderno (');
+      return texte;
+    }
+    function appliquerLangue(code, rerender) {
+      langue = ['en','fr','es'].includes(code) ? code : 'en';
+      document.documentElement.lang = langue;
+      try { localStorage.setItem('sq-language', langue); } catch (e) {}
+      const select = document.getElementById('select-langue');
+      if (select) {
+        select.value = langue;
+        const label = {en:'Change language',fr:'Changer la langue',es:'Cambiar idioma'}[langue];
+        select.title = label; select.setAttribute('aria-label', label);
+        document.getElementById('label-langue').textContent = {en:'Language',fr:'Langue',es:'Idioma'}[langue];
+      }
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      let node;
+      while ((node = walker.nextNode())) {
+        const source = node.__sqOriginal || node.nodeValue;
+        if (!node.__sqOriginal) node.__sqOriginal = source;
+        node.nodeValue = traduireTexte(source);
+      }
+      document.querySelectorAll('[placeholder],[title],[aria-label]').forEach((e) => {
+        ['placeholder','title','aria-label'].forEach((a) => {
+          if (!e.dataset['sq'+a]) e.dataset['sq'+a] = e.getAttribute(a) || '';
+          e.setAttribute(a, traduireTexte(e.dataset['sq'+a]));
+        });
+      });
+      if (rerender && partie) {
+        if (!document.getElementById('ecran-jeu').classList.contains('cache')) afficherMission();
+        else if (!document.getElementById('ecran-final').classList.contains('cache')) finale();
+        else if (!document.getElementById('ecran-carnet').classList.contains('cache')) afficherCarnet();
+      }
+      if (rerender && !document.getElementById('ecran-accueil').classList.contains('cache')) {
+        majProfil(); majRecords(); afficherHistorique();
+      }
+    }
+    try { langue = localStorage.getItem('sq-language') || 'en'; } catch (e) { langue = 'en'; }
+    document.addEventListener('DOMContentLoaded', function () {
+      appliquerLangue(langue, false);
+      const s = document.getElementById('select-langue');
+      if (s) s.addEventListener('change', () => appliquerLangue(s.value, true));
+    });
+    const observerLangue = new MutationObserver((mutations) => {
+      mutations.forEach((m) => {
+        if (m.type === 'characterData') {
+          const n = m.target;
+          const raw = n.__sqOriginal || n.nodeValue;
+          if (!n.__sqOriginal) n.__sqOriginal = raw;
+          const translated = traduireTexte(raw);
+          if (translated !== n.nodeValue) n.nodeValue = translated;
+        } else m.addedNodes.forEach((n) => {
+          if (n.nodeType === Node.TEXT_NODE) { n.__sqOriginal = n.nodeValue; n.nodeValue = traduireTexte(n.nodeValue); }
+          else if (n.nodeType === Node.ELEMENT_NODE) {
+            const w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT);
+            let t; while ((t = w.nextNode())) { t.__sqOriginal = t.nodeValue; t.nodeValue = traduireTexte(t.nodeValue); }
+          }
+        });
+      });
+    });
+    observerLangue.observe(document.documentElement, { subtree: true, childList: true, characterData: true });
+
     const MODES = {
       enquete:   { nom: 'Enquête',   icone: '🔍', mot: 'Mission',  etiquette: '📁 DOSSIER CONFIDENTIEL', chargement: "L'IA prépare ton enquête...",  scene: ['🕵️', '🔎', '📁'] },
       aventure:  { nom: 'Aventure',  icone: '🗺️', mot: 'Étape',    etiquette: '📜 LE RÉCIT',             chargement: "L'IA écrit ton aventure...",   scene: ['🏰', '🧭', '🐉'] },
       survie:    { nom: 'Survie',    icone: '🏝️', mot: 'Épreuve',  etiquette: '⚠️ SITUATION D\'URGENCE', chargement: "L'IA prépare ta survie...",    scene: ['🏝️', '🔥', '🌊'] },
       strategie: { nom: 'Stratégie', icone: '♟️', mot: 'Décision', etiquette: '📊 RAPPORT DE SITUATION', chargement: "L'IA prépare ta stratégie...", scene: ['🏙️', '📈', '🧩'] }
     };
+
+    const MODES_LANGUE = {
+      en: { enquete:['Investigation','Mission','📁 CASE FILE','AI is preparing your investigation…'], aventure:['Adventure','Stage','📜 THE STORY','AI is writing your adventure…'], survie:['Survival','Challenge','⚠️ EMERGENCY','AI is preparing your survival game…'], strategie:['Strategy','Decision','📊 SITUATION REPORT','AI is preparing your strategy…'] },
+      es: { enquete:['Investigación','Misión','📁 EXPEDIENTE','La IA prepara tu investigación…'], aventure:['Aventura','Etapa','📜 EL RELATO','La IA escribe tu aventura…'], survie:['Supervivencia','Desafío','⚠️ EMERGENCIA','La IA prepara tu partida de supervivencia…'], strategie:['Estrategia','Decisión','📊 INFORME DE SITUACIÓN','La IA prepara tu estrategia…'] }
+    };
+    function modoLocalise(cle, champ) {
+      const vals = MODES_LANGUE[langue] && MODES_LANGUE[langue][cle];
+      if (!vals) return MODES[cle][champ];
+      return vals[{nom:0,mot:1,etiquette:2,chargement:3}[champ]] || MODES[cle][champ];
+    }
 
     const BADGES = {
       premier:     { icone: '👣', nom: 'Premier pas',   desc: 'Terminer ta première partie' },
@@ -659,8 +798,17 @@
       marathon:    { icone: '🏃', nom: 'Marathon',      desc: 'Terminer une partie à 5 questions' },
       survivant:   { icone: '🏝️', nom: 'Survivant',     desc: 'Terminer une partie de Survie sans perdre' }
     };
+    const BADGES_LOCALISES = {
+      en: { premier:['First Steps','Finish your first game'], trois:['Three Stars','Earn 3 stars'], sans:['Perfect Run','Answer every question correctly on the first try'], explorateur:['Explorer','Play all 4 modes'], marathon:['Marathon','Finish a 5-question game'], survivant:['Survivor','Finish a Survival game without losing'] },
+      es: { premier:['Primeros pasos','Termina tu primera partida'], trois:['Tres estrellas','Consigue 3 estrellas'], sans:['Sin errores','Responde todo correctamente al primer intento'], explorateur:['Explorador','Juega los 4 modos'], marathon:['Maratón','Termina una partida de 5 preguntas'], survivant:['Superviviente','Termina una partida de Supervivencia sin perder'] }
+    };
+    function badgeLocalise(id, champ) {
+      return (BADGES_LOCALISES[langue] && BADGES_LOCALISES[langue][id] && BADGES_LOCALISES[langue][id][champ === 'nom' ? 0 : 1]) || BADGES[id][champ];
+    }
 
     const COURS_EXEMPLE = "La photosynthèse est le processus par lequel les plantes vertes fabriquent leur nourriture. Elle se déroule dans les feuilles, plus précisément dans les chloroplastes, qui contiennent un pigment vert appelé chlorophylle. La chlorophylle capte l'énergie de la lumière du soleil. Grâce à cette énergie, la plante transforme l'eau, absorbée par les racines, et le dioxyde de carbone, pris dans l'air par de petits trous appelés stomates, en glucose (un sucre). Cette transformation produit aussi du dioxygène, qui est rejeté dans l'air. Le glucose sert de nourriture à la plante : elle l'utilise pour grandir ou le stocke. La photosynthèse ne peut avoir lieu que de jour, car elle a besoin de lumière. Sans photosynthèse, il n'y aurait presque pas d'oxygène dans l'air pour respirer.";
+    const COURS_EXEMPLE_EN = "Photosynthesis is the process by which green plants make their food. It takes place in the leaves, inside chloroplasts that contain a green pigment called chlorophyll. Chlorophyll captures energy from sunlight. Using this energy, the plant turns water absorbed by its roots and carbon dioxide from the air into glucose, a sugar. This process also produces oxygen, which is released into the air. The plant uses glucose for food, growth, or storage. Photosynthesis can only happen in daylight because it needs light. Without photosynthesis, there would be very little oxygen in the air for us to breathe.";
+    const COURS_EXEMPLE_ES = "La fotosíntesis es el proceso mediante el cual las plantas verdes fabrican su alimento. Ocurre en las hojas, dentro de los cloroplastos que contienen un pigmento verde llamado clorofila. La clorofila capta la energía de la luz solar. Con esa energía, la planta transforma el agua absorbida por las raíces y el dióxido de carbono del aire en glucosa, un azúcar. Este proceso también produce oxígeno, que se libera al aire. La planta utiliza la glucosa como alimento, para crecer o para almacenarla. La fotosíntesis solo puede ocurrir durante el día porque necesita luz. Sin fotosíntesis habría muy poco oxígeno en el aire para respirar.";
 
     // ---------- Démo sans IA (pour ne jamais être bloqué le jour de la présentation) ----------
     const DEMO_QUESTIONS = [
@@ -700,9 +848,31 @@
                     "Un ingénieur propose de planter dans un sous-sol sans lumière : tu dois trancher."] }
     };
 
+    const DEMO_LOCALISEE = {
+      en: {
+        questions:[
+          ['Which part of a plant carries out photosynthesis?',['In the leaves','In the roots','In the stem','In the flowers'],'Think of the green part that captures light.','Photosynthesis takes place in the leaves, inside chloroplasts that contain chlorophyll.'],
+          ['Which gas do plants release during photosynthesis?',['Oxygen','Carbon dioxide','Nitrogen','Helium'],'It is the gas we breathe.','Photosynthesis produces oxygen, which is released into the air.'],
+          ['Why can photosynthesis only happen during the day?',['It needs light','Plants sleep at night','It is too cold at night','Water disappears at night'],'What kind of energy does chlorophyll capture?','Chlorophyll captures energy from sunlight. Without light, photosynthesis cannot happen.']
+        ],
+        histoires:{ enquete:['The Mystery of the Green Leaf','A gardener found a wilted plant. You have been called in to investigate.',['First clue: the leaves are yellow and soft. The gardener swears they watered the plant.','Second clue: a notebook says the plant made the laboratory air feel “fresher.”','Final clue: the plant was locked in a room with no windows.']], aventure:['The Quest for the Glowing Forest','Young explorer, save the enchanted forest by uncovering the secret of plants.',['An old sage blocks your path and asks where plants make their food.','A fairy gives you a magical breath, but asks which gas it is.','The castle gate opens only in daylight. The guardian asks why.']], survie:['Lost on the Green Island','Your boat sank. Plants will be your best chance of surviving on this island.',['You spot a plant and want to know where it makes its food.','The air in your cave feels heavy. What gas do plants release that could help?','Night is falling. Your friend wants to grow a plant in the dark. Explain the problem.']], strategie:['The City Garden Project','You lead an urban garden project. Every decision should be based on how plants work.',['The team is unsure where to place plants so they can make food.','The mayor asks what plants add to the city’s air.','An engineer suggests planting in a windowless basement. You must decide.']]}
+      },
+      es: {
+        questions:[
+          ['¿En qué parte de la planta ocurre la fotosíntesis?',['En las hojas','En las raíces','En el tallo','En las flores'],'Piensa en la parte verde que capta la luz.','La fotosíntesis ocurre en las hojas, dentro de los cloroplastos que contienen clorofila.'],
+          ['¿Qué gas liberan las plantas durante la fotosíntesis?',['Oxígeno','Dióxido de carbono','Nitrógeno','Helio'],'Es el gas que respiramos.','La fotosíntesis produce oxígeno, que se libera al aire.'],
+          ['¿Por qué la fotosíntesis solo puede ocurrir durante el día?',['Necesita luz','Las plantas duermen por la noche','Hace demasiado frío por la noche','El agua desaparece por la noche'],'¿Qué energía capta la clorofila?','La clorofila capta la energía de la luz solar. Sin luz, no hay fotosíntesis.']
+        ],
+        histoires:{ enquete:['El misterio de la hoja verde','Un jardinero encontró su planta marchita. Te han llamado para investigar.',['Primera pista: las hojas están amarillas y blandas. El jardinero asegura que la regó.','Segunda pista: una libreta dice que la planta hizo que el aire del laboratorio pareciera más fresco.','Última pista: la planta estaba encerrada en una habitación sin ventanas.']], aventure:['La búsqueda del Bosque Luminoso','Joven explorador, salva el bosque encantado descubriendo el secreto de las plantas.',['Un sabio te bloquea el camino y pregunta dónde fabrican su alimento las plantas.','Una hada te ofrece un aliento mágico, pero quiere saber qué gas es.','La puerta del castillo solo se abre de día. El guardián pregunta por qué.']], survie:['Perdido en la isla verde','Tu barco se hundió. Las plantas serán tu mejor ayuda para sobrevivir en esta isla.',['Observas una planta y quieres saber dónde fabrica su alimento.','El aire de tu cueva se siente pesado. ¿Qué gas liberan las plantas que podría ayudarte?','Cae la noche. Tu amigo quiere cultivar una planta a oscuras. Explícale el problema.']], strategie:['El proyecto del jardín urbano','Diriges un proyecto de jardín urbano. Cada decisión debe basarse en cómo funcionan las plantas.',['El equipo no sabe dónde colocar las plantas para que fabriquen alimento.','La alcaldesa pregunta qué aportan las plantas al aire de la ciudad.','Un ingeniero propone plantar en un sótano sin luz. Debes decidir.']]}
+      }
+    };
     function construireDemo(m) {
       const h = DEMO_HISTOIRES[m];
+      const pack = DEMO_LOCALISEE[langue];
+      const hist = pack && pack.histoires[m];
+      const questions = pack ? pack.questions.map((q) => ({question:q[0],choix:q[1],indice:q[2],explication:q[3]})) : DEMO_QUESTIONS;
       const missions = DEMO_QUESTIONS.map(function (q, i) {
+        if (pack) q = questions[i];
         const items = q.choix.map(function (c, k) { return { texte: c, ok: k === 0 }; });
         for (let a = items.length - 1; a > 0; a--) {
           const b = Math.floor(Math.random() * (a + 1));
@@ -717,8 +887,9 @@
           explication: q.explication
         };
       });
-      return { titre: h.titre, intro: h.intro, missions: missions,
-               notions: ["la chlorophylle", "les chloroplastes", "la lumière et le dioxygène"] };
+      return { titre: hist ? hist[0] : h.titre, intro: hist ? hist[1] : h.intro,
+               missions: missions.map((mission,i) => hist ? {...mission, scenario:hist[2][i]} : mission),
+               notions: langue === 'en' ? ['chlorophyll','chloroplasts','light and oxygen'] : langue === 'es' ? ['clorofila','cloroplastos','luz y oxígeno'] : ["la chlorophylle", "les chloroplastes", "la lumière et le dioxygène"] };
     }
 
     // ---------- Sons ----------
@@ -927,7 +1098,7 @@
         ecrireProfil(q);
       });
       haut.appendChild(champ);
-      haut.appendChild(el('span', 'niveau-joueur', '⚔️ Niveau ' + niveauJoueur(prof.xp)));
+      haut.appendChild(el('span', 'niveau-joueur', (langue === 'en' ? '⚔️ Level ' : langue === 'es' ? '⚔️ Nivel ' : '⚔️ Niveau ') + niveauJoueur(prof.xp)));
       zone.appendChild(haut);
 
       const barre = el('div', 'barre-xp');
@@ -941,8 +1112,8 @@
       Object.keys(BADGES).forEach(function (id) {
         const b = BADGES[id];
         const debloque = !!prof.badges[id];
-        const e = el('span', 'badge' + (debloque ? '' : ' verrouille'), debloque ? b.icone + ' ' + b.nom : '🔒 ' + b.nom);
-        e.title = b.desc + (debloque ? ' (obtenu le ' + prof.badges[id] + ')' : '');
+        const e = el('span', 'badge' + (debloque ? '' : ' verrouille'), (debloque ? b.icone : '🔒') + ' ' + badgeLocalise(id, 'nom'));
+        e.title = badgeLocalise(id, 'desc') + (debloque ? (langue === 'en' ? ' (earned on ' : langue === 'es' ? ' (obtenida el ' : ' (obtenu le ') + prof.badges[id] + ')' : '');
         liste.appendChild(e);
       });
       const plus = el('details', 'profil-plus');
@@ -979,7 +1150,7 @@
       const nouveaux = [];
       Object.keys(BADGES).forEach(function (id) {
         if (gagnes[id] && !prof.badges[id]) {
-          prof.badges[id] = new Date().toLocaleDateString('fr-FR');
+          prof.badges[id] = dateLocale();
           nouveaux.push(id);
         }
       });
@@ -1024,7 +1195,7 @@
       ul.textContent = '';
       h.forEach(function (x) {
         const cfg = MODES[x.mode];
-        ul.appendChild(el('li', '', x.date + ' · ' + cfg.icone + ' ' + cfg.nom + ' · ' + x.titre + ' · ' + x.score + '/' + x.total));
+        ul.appendChild(el('li', '', x.date + ' · ' + cfg.icone + ' ' + modoLocalise(x.mode, 'nom') + ' · ' + x.titre + ' · ' + x.score + '/' + x.total));
       });
     }
 
@@ -1121,7 +1292,7 @@
       });
     });
     $('btn-exemple').addEventListener('click', function () {
-      $('cours').value = COURS_EXEMPLE;
+      $('cours').value = langue === 'en' ? COURS_EXEMPLE_EN : langue === 'es' ? COURS_EXEMPLE_ES : COURS_EXEMPLE;
       $('msg-cours').textContent = '';
       sauverCours();
     });
@@ -1272,7 +1443,7 @@
         return;
       }
       $('msg-cours').textContent = '';
-      $('texte-chargement').textContent = focus ? "L'IA prépare tes questions de révision..." : MODES[mode].chargement;
+      $('texte-chargement').textContent = focus ? traduireTexte("L'IA prépare tes questions de révision...") : modoLocalise(mode, 'chargement');
       demarrerAttente();
       montrer('ecran-chargement');
       controleur = new AbortController();
@@ -1282,7 +1453,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           signal: controleur.signal,
-          body: JSON.stringify({ id: id, cours: cours, mode: mode, nb: nbQuestions, niveau: niveau, focus: focus || undefined })
+          body: JSON.stringify({ id: id, cours: cours, mode: mode, nb: nbQuestions, niveau: niveau, langue: langue, focus: focus || undefined })
         });
         let data = null;
         if (rep.status === 202) {
@@ -1377,7 +1548,7 @@
       }
 
       const carte = el('div', 'scenario');
-      carte.appendChild(el('div', 'etiquette', cfg.etiquette));
+      carte.appendChild(el('div', 'etiquette', modoLocalise(p.mode, 'etiquette')));
       carte.appendChild(el('p', '', m.scenario));
       zone.appendChild(carte);
 
@@ -1417,7 +1588,7 @@
       const barre = $('barre');
       barre.textContent = '';
 
-      barre.appendChild(el('div', '', cfg.icone + ' ' + cfg.mot + ' ' + Math.min(p.i + 1, n) + '/' + n));
+      barre.appendChild(el('div', '', cfg.icone + ' ' + modoLocalise(p.mode, 'mot') + ' ' + Math.min(p.i + 1, n) + '/' + n));
 
       if (p.mode === 'survie') {
         const v = el('div', '');
@@ -1499,7 +1670,7 @@
       const p = partie;
       const b = $('btn-suivant');
       const dernier = p.perdu || (p.vue3d ? p.faites.length >= p.missions.length : p.i >= p.missions.length - 1);
-      b.textContent = dernier ? 'Voir le bilan' : (p.vue3d ? '🧊 Retourner dans la salle' : MODES[p.mode].mot + ' suivante');
+      b.textContent = dernier ? traduireTexte('Voir le bilan') : (p.vue3d ? (langue === 'en' ? '🧊 Return to the room' : langue === 'es' ? '🧊 Volver a la sala' : '🧊 Retourner dans la salle') : modoLocalise(p.mode, 'mot') + (langue === 'en' ? ' next' : langue === 'es' ? ' siguiente' : ' suivante'));
       b.classList.remove('cache');
     }
 
@@ -1527,7 +1698,7 @@
         if (p.essais === 1) {
           p.ratees.push(m.question);
           if (!p.demo) {
-            const nouveau = ajouterAuCarnet({ question: m.question, explication: m.explication, notion: p.titre, date: new Date().toLocaleDateString('fr-FR') });
+            const nouveau = ajouterAuCarnet({ question: m.question, explication: m.explication, notion: p.titre, date: dateLocale() });
             if (nouveau) p.carnetAjouts++;
           }
         }
@@ -1577,9 +1748,9 @@
     function messageErreur3D(e) {
       const detail = String((e && e.message) || e || '').slice(0, 140);
       if (/dynamically imported|Failed to fetch|module|three/i.test(detail)) {
-        return "La 3D n'est pas installée sur cet ordinateur : tape « npm install » dans le terminal, relance le serveur, puis réessaie. En attendant, voici la version classique.";
+        return langue === 'en' ? '3D could not load on this device. Check your internet connection and try again. You can continue in classic mode.' : langue === 'es' ? 'No se pudo cargar el modo 3D en este dispositivo. Comprueba tu conexión a internet e inténtalo de nuevo. Puedes continuar en el modo clásico.' : "La 3D n'a pas pu se charger sur cet appareil. Vérifie ta connexion internet et réessaie. Tu peux continuer en mode classique.";
       }
-      return "La 3D n'a pas pu démarrer sur cet appareil (" + detail + "). Voici la version classique.";
+      return langue === 'en' ? '3D could not start on this device (' + detail + '). You can continue in classic mode.' : langue === 'es' ? 'No se pudo iniciar el modo 3D en este dispositivo (' + detail + '). Puedes continuar en el modo clásico.' : "La 3D n'a pas pu démarrer sur cet appareil (" + detail + "). Tu peux continuer en mode classique.";
     }
 
     function repliClassique(raison) {
@@ -1596,7 +1767,7 @@
     function majInfo3D() {
       const p = partie;
       const cfg = MODES[p.mode];
-      $('info3d').textContent = cfg.icone + ' ' + cfg.nom + ' · ' + p.faites.length + '/' + p.missions.length + ' terminé(s) · Score : ' + p.score;
+      $('info3d').textContent = cfg.icone + ' ' + modoLocalise(p.mode, 'nom') + ' · ' + p.faites.length + '/' + p.missions.length + (langue === 'en' ? ' complete · Score: ' : langue === 'es' ? ' completadas · Puntuación: ' : ' terminé(s) · Score : ') + p.score;
     }
 
     function majInvite3D(i) {
@@ -1606,7 +1777,7 @@
         return;
       }
       const lieu = salle && salle.stationsPos ? salle.stationsPos()[i] : null;
-      inv.textContent = 'Appuie sur E (ou clique) pour ouvrir : ' + (lieu ? lieu.libelle : MODES[partie.mode].mot + ' ' + (i + 1));
+      inv.textContent = (langue === 'en' ? 'Press E (or click) to open: ' : langue === 'es' ? 'Pulsa E (o haz clic) para abrir: ' : 'Appuie sur E (ou clique) pour ouvrir : ') + (lieu ? lieu.libelle : modoLocalise(partie.mode, 'mot') + ' ' + (i + 1));
       inv.classList.remove('cache');
     }
 
@@ -1617,9 +1788,9 @@
       const debut = p.faites.length === 0 && !p.introVue;
       $('bloc3d').classList.toggle('cache', !!verrouille);
       const surIle = p.mode === 'aventure';   // les autres modes auront leur île plus tard
-      $('titre3d').textContent = debut ? p.titre : (surIle ? 'L’île d’Aventure' : 'Salle d’exploration');
-      $('intro3d').textContent = debut ? p.intro : 'Clique pour reprendre ta visite.';
-      $('btn-entrer3d').textContent = debut ? (surIle ? 'Cliquer pour explorer l’île' : 'Cliquer pour entrer dans la salle') : 'Cliquer pour reprendre';
+      $('titre3d').textContent = debut ? p.titre : (surIle ? traduireTexte('L’île d’Aventure') : traduireTexte('Salle d’exploration'));
+      $('intro3d').textContent = debut ? p.intro : traduireTexte('Clique pour reprendre ta visite.');
+      $('btn-entrer3d').textContent = debut ? traduireTexte(surIle ? 'Cliquer pour explorer l’île' : 'Cliquer pour entrer dans la salle') : traduireTexte('Cliquer pour reprendre');
       $('btn-classique3d').classList.toggle('cache', p.faites.length > 0);
     }
 
@@ -1632,9 +1803,10 @@
         $('scene3d').textContent = '';
         salle = module3d.creerSalle($('scene3d'), {
           theme: p.mode,
+          langue: langue,
           son: sonActif,
           stations: p.missions.map(function (m, i) {
-            return { libelle: MODES[p.mode].mot + ' ' + (i + 1), fait: p.faites.indexOf(i) >= 0 };
+            return { libelle: modoLocalise(p.mode, 'mot') + ' ' + (i + 1), fait: p.faites.indexOf(i) >= 0 };
           }),
           onOuvrir: ouvrirStation,
           onProche: majInvite3D,
@@ -1683,14 +1855,17 @@
     function finale() {
       fermer3D();
       const p = partie;
+      const reprise = p.resume || null;
       const n = p.missions.length;
       const ratio = p.score / (100 * n);
       const nb = p.perdu ? 1 : (ratio >= 0.8 ? 3 : (ratio >= 0.5 ? 2 : 1));
 
-      const ancien = lireRecord(p.mode);
-      const nouveauRecord = p.score > ancien;
-      if (nouveauRecord) ecrireRecord(p.mode, p.score);
-      ajouterHistorique({ date: new Date().toLocaleDateString('fr-FR'), mode: p.mode, titre: p.titre, score: p.score, total: 100 * n });
+      const ancien = reprise ? reprise.ancien : lireRecord(p.mode);
+      const nouveauRecord = reprise ? reprise.nouveauRecord : p.score > ancien;
+      if (!reprise) {
+        if (nouveauRecord) ecrireRecord(p.mode, p.score);
+        ajouterHistorique({ date: dateLocale(), mode: p.mode, titre: p.titre, score: p.score, total: 100 * n });
+      }
 
       const zone = $('ecran-final');
       zone.textContent = '';
@@ -1706,14 +1881,15 @@
 
       zone.appendChild(el('p', 'gros-score', 'Score : ' + p.score + ' / ' + (100 * n)));
 
-      const g = gagnerXp(p, nb);
+      const g = reprise ? reprise.g : gagnerXp(p, nb);
+      if (!reprise) p.resume = { ancien: ancien, nouveauRecord: nouveauRecord, g: g };
       zone.appendChild(el('p', 'gain-xp', '+' + g.gain + ' XP'));
       if (g.niveauApres > g.niveauAvant) {
         zone.appendChild(el('p', 'nouveau-record', '⬆️ Niveau ' + g.niveauApres + ' !'));
       }
       g.nouveaux.forEach(function (id) {
         const bd = BADGES[id];
-        zone.appendChild(el('div', 'carte-badge', '🏅 Nouveau badge : ' + bd.icone + ' ' + bd.nom + ' — ' + bd.desc));
+        zone.appendChild(el('div', 'carte-badge', langue === 'fr' ? '🏅 Nouveau badge : ' + bd.icone + ' ' + bd.nom + ' — ' + bd.desc : '🏅 ' + (langue === 'en' ? 'New badge: ' : 'Nueva insignia: ') + bd.icone + ' ' + badgeLocalise(id, 'nom') + ' — ' + badgeLocalise(id, 'desc')));
       });
       if (nouveauRecord && p.score > 0) {
         zone.appendChild(el('p', 'nouveau-record', '🏆 Nouveau record !'));
@@ -1721,7 +1897,7 @@
         zone.appendChild(el('p', 'doux', '🏆 Ton record dans ce mode : ' + ancien));
       }
 
-      if (p.focus && !p.perdu && p.ratees.length === 0) {
+      if (!reprise && p.focus && !p.perdu && p.ratees.length === 0) {
         p.carnetRetires = retirerDuCarnet(p.focus);
       }
       if (p.carnetAjouts > 0) {
@@ -1778,10 +1954,10 @@
 
       montrer('ecran-final');
 
-      if (!p.perdu && nb >= 2) {
+      if (!reprise && !p.perdu && nb >= 2) {
         bip(SONS.victoire);
         confettis();
-      } else {
+      } else if (!reprise) {
         bip(SONS.fin);
       }
     }

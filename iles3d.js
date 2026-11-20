@@ -164,7 +164,7 @@ function lotInstances(THREE, geometrie, matiere, max) {
 // ==========================================================================
 //  ÎLE D'AVENTURE : jungle, montagnes, cascade, grotte, ruines, chemins
 // ==========================================================================
-function construireAventure(THREE, scene) {
+function construireAventure(THREE, scene, langue) {
   // Chaque décor est construit « à l'essai » : s'il pose problème, seul ce décor est ignoré.
   function essayer(nom, fonction) {
     try {
@@ -212,6 +212,11 @@ function construireAventure(THREE, scene) {
     { nom: 'Clairière', x: 5, z: 5 },
     { nom: 'Camp de base', x: 8, z: 28 }
   ];
+  const nomsLieux = {
+    en: ['Waterfall','Ruins','Cave','Summit','Clearing','Base Camp'],
+    es: ['Cascada','Ruinas','Cueva','Cumbre','Claro','Campamento base']
+  }[langue];
+  if (nomsLieux) LIEUX.forEach(function (lieu, i) { lieu.nom = nomsLieux[i]; });
 
   function rayonIle(a) {
     return 58 + 5 * Math.sin(3 * a + 1) + 3 * Math.sin(5 * a + 2) + 2 * Math.sin(2 * a);
@@ -957,7 +962,8 @@ function construireAventure(THREE, scene) {
     const y = hauteur(sx, sz);
     forme(new THREE.CylinderGeometry(0.08, 0.1, 2.9, 6), 0x7a5230, sx, y + 1.45, sz);
     obstacle(sx, sz, 0.3);
-    [['Cascade', 0xd9b36b, 1.0, 0.25], ['Ruines', 0xc9a468, 1.55, -0.1], ['Grotte', 0xd9b36b, 2.1, 0.12], ['Sommet', 0xc9a468, 2.65, -0.2]].forEach(function (t) {
+    const nomsPanneau = langue === 'en' ? ['Waterfall','Ruins','Cave','Summit'] : langue === 'es' ? ['Cascada','Ruinas','Cueva','Cumbre'] : ['Cascade','Ruines','Grotte','Sommet'];
+    [[nomsPanneau[0], 0xd9b36b, 1.0, 0.25], [nomsPanneau[1], 0xc9a468, 1.55, -0.1], [nomsPanneau[2], 0xd9b36b, 2.1, 0.12], [nomsPanneau[3], 0xc9a468, 2.65, -0.2]].forEach(function (t) {
       const pl = planche(t[0], t[1]);
       if (!pl) return;
       pl.position.set(sx, y + t[2] + 0.1, sz + 0.07);
@@ -1208,6 +1214,6 @@ export function ileExiste(mode) {
   return typeof ILES[mode] === 'function';
 }
 
-export function creerIle(THREE, mode, scene) {
-  return ILES[mode] ? ILES[mode](THREE, scene) : null;
+export function creerIle(THREE, mode, scene, langue) {
+  return ILES[mode] ? ILES[mode](THREE, scene, langue || 'en') : null;
 }

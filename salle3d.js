@@ -300,7 +300,7 @@ export function creerSalle(conteneur, options) {
   // ---------- L'île du mode (si elle existe), sinon la salle classique ----------
   let ile = null;
   try {
-    ile = creerIle(THREE, options.theme, scene);
+    ile = creerIle(THREE, options.theme, scene, options.langue || 'en');
   } catch (e) {
     console.error('Île 3D impossible, retour à la salle classique :', e);
     while (scene.children.length > 0) scene.remove(scene.children[0]);
@@ -562,7 +562,7 @@ export function creerSalle(conteneur, options) {
     const c = document.createElement('canvas');
     c.width = PX;
     c.height = PX;
-    c.setAttribute('aria-label', 'Mini-carte de l’île (touche Tab pour l’agrandir)');
+    c.setAttribute('aria-label', options.langue === 'fr' ? 'Mini-carte de l’île (touche Tab pour l’agrandir)' : options.langue === 'es' ? 'Minimapa de la isla (pulsa Tab para ampliarlo)' : 'Island mini-map (press Tab to enlarge)');
     if (window.getComputedStyle(conteneur).position === 'static') conteneur.style.position = 'relative';
     const st = c.style;
     st.position = 'absolute';
