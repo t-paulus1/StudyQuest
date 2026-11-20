@@ -519,7 +519,7 @@
     }
   </style>
 </head>
-<body data-mode="enquete">
+<body data-mode="aventure">
 
   <label class="cache" for="select-langue" id="label-langue">Language</label>
   <select id="select-langue" class="langue" aria-label="Language" title="Change language">
@@ -919,7 +919,7 @@
     }
 
     // ---------- Petits outils ----------
-    let mode = 'enquete';
+    let mode = 'aventure';
     let nbQuestions = 3;
     let niveau = 'lycee';
     let dernierFocus = null;
@@ -1349,7 +1349,7 @@
     $('btn-demo').addEventListener('click', lancerDemo);
     $('btn-demo-erreur').addEventListener('click', lancerDemo);
     $('btn-retour').addEventListener('click', function () { majRecords(); montrer('ecran-accueil'); });
-    choisirMode('enquete');
+    choisirMode('aventure');
     restaurerCours();
     majRecords();
 
