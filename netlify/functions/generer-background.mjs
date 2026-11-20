@@ -16,7 +16,8 @@ const NIVEAUX = {
   superieur: "études supérieures (précis et exigeant, avec le vocabulaire technique du cours)"
 };
 
-function consignes(mode, nb, niveau, focus) {
+function consignes(mode, nb, niveau, focus, langue) {
+  const nomLangue = { en: 'English', fr: 'French', es: 'Spanish' }[langue] || 'English';
   let supplement = '';
   if (focus.length > 0) {
     supplement = `
@@ -27,7 +28,7 @@ On te donne le cours d'un élève. Tu fabriques un petit jeu à partir de ce cou
 
 Règles :
 - Appuie-toi UNIQUEMENT sur le cours fourni. N'invente aucune information qui n'y est pas.
-- Écris en français simple, adapté à un élève.
+- Écris toute la réponse en ${nomLangue}, avec des formulations simples adaptées à un élève. Traduis le titre, l'introduction, les scénarios, les questions, les choix, les indices, les explications et les notions.
 - Ambiance du jeu : ${AMBIANCES[mode]}
 - Niveau de l'élève : ${NIVEAUX[niveau]}.
 - Fabrique exactement ${nb} missions.${supplement}
@@ -155,13 +156,19 @@ export default async (req) => {
   const echec = (message) => store.setJSON(id, { statut: 'erreur', error: message });
 
   try {
+    const langue = ['en','fr','es'].includes(body.langue) ? body.langue : 'en';
+    const erreurs = {
+      en: { key: 'The NVIDIA API key is missing from Netlify environment variables.', short: 'Your lesson is too short. Paste at least 200 characters.', failed: 'AI could not prepare the game. Please try again shortly.', auth: 'NVIDIA rejected the API key. Check the key in Netlify settings.', rate: 'Too many requests were sent to NVIDIA. Wait a minute, then try again.', timeout: 'AI took too long to respond. Please try again.', general: 'Something went wrong. Please try again shortly.' },
+      fr: { key: "La clé API NVIDIA est introuvable dans les variables d'environnement de Netlify.", short: 'Le cours est trop court : colle au moins 200 caractères.', failed: "L'IA n'a pas réussi à préparer le jeu. Réessaie dans un instant.", auth: 'NVIDIA refuse la clé API. Vérifie ta clé dans les variables de Netlify.', rate: 'Trop de demandes envoyées à NVIDIA. Attends une minute puis réessaie.', timeout: "L'IA a mis trop de temps à répondre. Réessaie.", general: 'Une erreur est survenue. Réessaie dans un instant.' },
+      es: { key: 'Falta la clave API de NVIDIA en las variables de entorno de Netlify.', short: 'La lección es demasiado corta. Pega al menos 200 caracteres.', failed: 'La IA no pudo preparar el juego. Inténtalo de nuevo en breve.', auth: 'NVIDIA rechazó la clave API. Comprueba la clave en Netlify.', rate: 'Se enviaron demasiadas solicitudes a NVIDIA. Espera un minuto e inténtalo de nuevo.', timeout: 'La IA tardó demasiado en responder. Inténtalo de nuevo.', general: 'Se produjo un error. Inténtalo de nuevo en breve.' }
+    }[langue];
     if (!process.env.NVIDIA_API_KEY) {
-      return await echec("La clé API NVIDIA est introuvable. Ajoute NVIDIA_API_KEY dans les variables d'environnement de Netlify.");
+      return await echec(erreurs.key);
     }
     const mode = AMBIANCES[body.mode] ? body.mode : 'enquete';
     let cours = typeof body.cours === 'string' ? body.cours.trim() : '';
     if (cours.length < 200) {
-      return await echec('Le cours est trop court : colle au moins 200 caractères.');
+      return await echec(erreurs.short);
     }
     cours = cours.slice(0, 6000);
     const nb = Number(body.nb) === 5 ? 5 : 3;
@@ -171,7 +178,7 @@ export default async (req) => {
       : [];
 
     const messages = [
-      { role: 'system', content: consignes(mode, nb, niveau, focus) },
+      { role: 'system', content: consignes(mode, nb, niveau, focus, langue) },
       { role: 'user', content: 'Voici le cours :\n\n' + cours }
     ];
 
@@ -188,17 +195,18 @@ export default async (req) => {
       }
     }
 
-    let message = "L'IA n'a pas réussi à préparer le jeu. Réessaie dans un instant.";
+    let message = erreurs.failed;
     if (derniere && (derniere.status === 401 || derniere.status === 403)) {
-      message = 'NVIDIA refuse la clé API. Vérifie ta clé dans les variables de Netlify.';
+      message = erreurs.auth;
     } else if (derniere && derniere.status === 429) {
-      message = 'Trop de demandes envoyées à NVIDIA. Attends une minute puis réessaie.';
+      message = erreurs.rate;
     } else if (derniere && derniere.name === 'TimeoutError') {
-      message = "L'IA a mis trop de temps à répondre. Réessaie.";
+      message = erreurs.timeout;
     }
     await echec(message);
   } catch (e) {
     console.error('Erreur générale :', e);
-    try { await echec("Une erreur est survenue. Réessaie dans un instant."); } catch (e2) { /* tant pis */ }
+    const fallback = body.langue === 'fr' ? 'Une erreur est survenue. Réessaie dans un instant.' : body.langue === 'es' ? 'Se produjo un error. Inténtalo de nuevo en breve.' : 'Something went wrong. Please try again shortly.';
+    try { await echec(fallback); } catch (e2) { /* tant pis */ }
   }
 };
