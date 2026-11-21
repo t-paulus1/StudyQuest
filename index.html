@@ -78,6 +78,7 @@
       padding: 0 12px; background: var(--carte); color: white; font-weight: 700;
       cursor: pointer;
     }
+    .langue.clavier { right: 150px; }
 
     textarea {
       width: 100%;
@@ -450,7 +451,7 @@
       -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
     }
     .carnet-coin:hover { border-color: var(--accent); }
-    #bloc-vue { margin-top: 22px; }
+    #bloc-vue { margin-top: 22px; cursor: default; }
     #bloc-vue .vue { padding: 12px 26px; font-size: 17px; color: white; cursor: pointer; background: transparent; border: 2px solid var(--doux); }
     .options, .historique { max-width: 560px; margin: 26px auto 0 auto; text-align: left; }
     .options summary, .historique summary, .profil-plus summary { cursor: pointer; color: var(--doux); font-weight: bold; padding: 8px 4px; }
@@ -523,9 +524,13 @@
 
   <label class="cache" for="select-langue" id="label-langue">Language</label>
   <select id="select-langue" class="langue" aria-label="Language" title="Change language">
-    <option value="en">🇬🇧 EN</option>
+    <option value="en">🇺🇸 EN</option>
     <option value="fr">🇫🇷 FR</option>
     <option value="es">🇪🇸 ES</option>
+  </select>
+  <select id="select-clavier" class="langue clavier" aria-label="Keyboard layout" title="Keyboard layout">
+    <option value="qwerty">🇺🇸 QWERTY</option>
+    <option value="azerty">🇫🇷 AZERTY</option>
   </select>
   <button id="btn-son" class="son" title="Son (touche M)" aria-label="Couper ou remettre le son" aria-pressed="false">🔊</button>
 
@@ -539,7 +544,7 @@
     <div id="profil" class="profil"></div>
 
     <h2>1. Colle ton cours</h2>
-    <textarea id="cours" placeholder="Colle ici le texte de ton cours (200 caractères minimum)... ou glisse un fichier .txt ou .pdf"></textarea>
+    <textarea id="cours" placeholder="Colle ici le texte de ton cours... ou glisse un fichier .txt ou .pdf"></textarea>
     <p id="msg-cours" class="message-erreur"></p>
     <p id="msg-fichier" class="doux"></p>
 
@@ -567,9 +572,7 @@
       </div>
     </div>
 
-    <div id="bloc-vue">
-      <button id="btn-3d" class="vue" aria-pressed="false">🧊 Exploration 3D : désactivée</button>
-    </div>
+    <div id="bloc-vue" class="vue selectionne" role="status">🧊 Exploration 3D : activée</div>
 
     <button id="btn-lancer" class="btn">Lancer le jeu</button>
 
@@ -659,38 +662,62 @@
     const TEXTES = {
       en: {
         'Son (touche M)':'Sound (press M)','Couper ou remettre le son':'Mute or unmute sound','📓 Mon carnet (0)':'📓 My notebook (0)',
-        'Transforme ton cours en aventure !':'Turn your lesson into an adventure!','1. Colle ton cours':'1. Paste your lesson','Colle ici le texte de ton cours (200 caractères minimum)... ou glisse un fichier .txt ou .pdf':'Paste your lesson here (at least 200 characters)… or drop a .txt or .pdf file',
+        'Transforme ton cours en aventure !':'Turn your lesson into an adventure!','1. Colle ton cours':'1. Paste your lesson','Colle ici le texte de ton cours... ou glisse un fichier .txt ou .pdf':'Paste your lesson here… or drop a .txt or .pdf file',
         '2. Choisis ton mode de jeu':'2. Choose a game mode','✅ Île 3D terminée':'✅ 3D island ready','🚧 Île 3D bientôt':'🚧 3D island coming soon','Aventure':'Adventure','Explore et avance dans une histoire':'Explore and progress through a story','Enquête':'Investigation','Résous un mystère avec des indices':'Solve a mystery using clues','Survie':'Survival','Prends les bonnes décisions':'Make the right decisions','Stratégie':'Strategy','Planifie et gère tes ressources':'Plan and manage your resources',
         '🧊 Exploration 3D : désactivée':'🧊 3D exploration: off','🧊 Exploration 3D : activée':'🧊 3D exploration: on','Lancer le jeu':'Start game','⚙️ Options':'⚙️ Options','Nombre de questions':'Number of questions','3 · rapide':'3 · quick','5 · complet':'5 · full','Ton niveau':'Your level','Collège':'Middle school','Lycée':'High school','Supérieur':'University','Outils':'Tools','📄 Importer un fichier':'📄 Upload a file',"Cours d'exemple":'Sample lesson','Démo sans IA':'No-AI demo','📚 Historique des parties':'📚 Game history','Effacer l’historique':'Clear history','🧊 Exploration 3D : Three.js (MIT), inspirée du first-person-starter-kit d’Augusto Polonio (MIT).':'🧊 3D exploration: Three.js (MIT), inspired by Augusto Polonio’s first-person-starter-kit (MIT).',
         'Ça peut prendre jusqu’à une minute.':'This can take up to a minute.','Ça peut prendre jusqu\'à une minute.':'This can take up to a minute.','Ça prend du temps... tu peux jouer à la démo sans IA.':'Taking a while… you can play the no-AI demo.','Jouer à la démo (sans IA)':'Play the no-AI demo','Annuler':'Cancel','Oups…':'Oops…','Réessayer':'Try again','Retour à l’accueil':'Back to home','Retour à l\'accueil':'Back to home',
-        '🖱️ Souris : regarder · ZQSD / WASD / flèches : marcher · Maj : courir · Espace : sauter':'🖱️ Mouse: look · WASD / arrow keys: move · Shift: run · Space: jump','E (ou clic) : ouvrir une mission · Tab : grande carte · M : couper le son · Échap : libérer la souris':'E (or click): open a mission · Tab: map · M: mute · Esc: release mouse','Cliquer pour entrer dans la salle':'Click to enter the room','Passer en version classique':'Switch to classic mode','Quitter la partie':'Quit game',
-        'Ton carnet est vide : continue de jouer, tes erreurs apparaîtront ici.':'Your notebook is empty. Keep playing and missed questions will appear here.','Voir l’explication':'Show explanation','Cacher l’explication':'Hide explanation','Réviser mon carnet':'Review my notebook','Vider le carnet':'Clear notebook','Retour':'Back','Pour réviser, colle d’abord ton cours sur la page d’accueil (au moins 200 caractères), puis reviens ici.':'To review, first paste your lesson on the home page (at least 200 characters), then come back here.','Vider tout ton carnet ?':'Clear your entire notebook?','Effacer ton pseudo, ton XP et tes badges ?':'Reset your nickname, XP, and badges?',
+        '🖱️ Souris : regarder · ZQSD / WASD / flèches : marcher · Maj : courir · Espace : sauter':'🖱️ Mouse: look · WASD (ZQSD on AZERTY) / arrow keys: move · Shift: run · Space: jump','E (ou clic) : ouvrir une mission · Tab : grande carte · M : couper le son · Échap : libérer la souris':'E (or click): open a mission · Tab: map · M: mute · Esc: release mouse','Cliquer pour entrer dans la salle':'Click to enter the room','Passer en version classique':'Switch to classic mode','Quitter la partie':'Quit game',
+        'Ton carnet est vide : continue de jouer, tes erreurs apparaîtront ici.':'Your notebook is empty. Keep playing and missed questions will appear here.','Voir l’explication':'Show explanation','Cacher l’explication':'Hide explanation','Réviser mon carnet':'Review my notebook','Vider le carnet':'Clear notebook','Retour':'Back','Pour réviser, colle d’abord ton cours sur la page d’accueil, puis reviens ici.':'To review, first paste your lesson on the home page, then come back here.','Vider tout ton carnet ?':'Clear your entire notebook?','Effacer ton pseudo, ton XP et tes badges ?':'Reset your nickname, XP, and badges?',
         'Premier pas':'First Steps','Terminer ta première partie':'Finish your first game','Trois étoiles':'Three Stars','Obtenir 3 étoiles':'Earn 3 stars','Sans faute':'Perfect Run','Réussir toutes les questions du premier coup':'Answer every question correctly on the first try','Explorateur':'Explorer','Jouer les 4 modes':'Play all 4 modes','Marathon':'Marathon','Terminer une partie à 5 questions':'Finish a 5-question game','Survivant':'Survivor','Terminer une partie de Survie sans perdre':'Finish a Survival game without losing','Niveau':'Level','vers le niveau':'XP to level','🏅 Mes badges':'🏅 My badges','Réinitialiser mon profil':'Reset my profile','Record':'Best score','Lecture du fichier...':'Reading file…','importé':'imported','caractères':'characters','Impossible de lire ce fichier (un PDF scanné ou sans internet ne marche pas). Colle le texte à la main.':'Could not read this file (scanned PDFs and offline files are not supported). Paste the text instead.',
         'Ça prend du temps... tu peux jouer à la démo sans IA.':'Taking a while… you can play the no-AI demo.','Relire un cours le lendemain aide beaucoup plus que le relire 10 fois d’un coup.':'Reviewing a lesson the next day helps more than rereading it ten times in a row.','Relire un cours le lendemain aide beaucoup plus que le relire 10 fois d\'un coup.':'Reviewing a lesson the next day helps more than rereading it ten times in a row.','Se tester soi-même (comme ici !) fait mieux retenir que relire.':'Testing yourself (like this!) helps you remember more than rereading.','Explique la notion à voix haute, comme si tu l’apprenais à quelqu’un.':'Explain the idea out loud as if you were teaching someone.','Dors bien : le cerveau classe ce que tu as appris pendant la nuit.':'Get enough sleep: your brain organizes what you learned overnight.','Révise par petites séances de 25 minutes, avec une vraie pause entre deux.':'Study in short 25-minute sessions, with a real break between them.','Se tromper est utile : une erreur corrigée reste mieux en mémoire.':'Mistakes help: corrected mistakes are easier to remember.','Commence par ce qui est le plus difficile, quand tu es encore frais.':'Start with the hardest topic while your mind is fresh.','Dessine un petit schéma : une image se retient mieux qu’un long texte.':'Draw a quick diagram: pictures are easier to remember than long text.',
-        'Ton cours est trop court : colle au moins 200 caractères (quelques phrases).':'Your lesson is too short. Paste at least 200 characters (a few sentences).','L’IA prépare tes questions de révision...':'AI is preparing your review questions…','L\'IA prépare tes questions de révision...':'AI is preparing your review questions…','Impossible de joindre le serveur. Vérifie ta connexion internet (en local : le serveur doit tourner avec node server.js).':'Could not reach the server. Check your internet connection. When running locally, start the server with node server.js.','L’IA n’a pas réussi à préparer le jeu. Réessaie dans un instant.':'AI could not prepare the game. Please try again shortly.','L\'IA n\'a pas réussi à préparer le jeu. Réessaie dans un instant.':'AI could not prepare the game. Please try again shortly.','Le serveur a répondu avec une erreur.':'The server returned an error.','Requête invalide.':'Invalid request.','Une erreur est survenue.':'Something went wrong.','Doucement ! Réessaie dans une minute.':'Too many requests. Please try again in a minute.','Réputation':'Reputation','Bien joué !':'Nice work!','Pas tout à fait…':'Not quite…','Indice :':'Hint:','Plus de cœurs ! La partie est finie.':'Out of hearts! Game over.','Voir le bilan':'View results','Partie terminée':'Game over','Bravo !':'Well done!','Score':'Score','Nouveau badge :':'New badge:','Nouveau record !':'New high score!','Notions travaillées':'Topics covered','À retravailler':'Review these','Rien ! Tout réussi du premier coup 🎉':'Nothing! You got everything right on the first try 🎉','Réviser mes erreurs':'Review my mistakes','Rejouer avec le même cours':'Play again with the same lesson','Nouveau cours':'New lesson','Quitter la partie en cours ?':'Quit the current game?','L’île d’Aventure':'Adventure Island','Salle d’exploration':'Exploration room','Clique pour reprendre ta visite.':'Click to resume exploring.','Cliquer pour explorer l’île':'Click to explore the island','Cliquer pour entrer dans la salle':'Click to enter the room','Cliquer pour reprendre':'Click to resume','Appuie sur E (ou clique) pour ouvrir :':'Press E (or click) to open:','terminé(s)':'complete','Mission':'Mission','Étape':'Stage','Épreuve':'Challenge','Décision':'Decision','À réviser':'To review','📁 DOSSIER CONFIDENTIEL':'📁 CASE FILE','📜 LE RÉCIT':'📜 THE STORY','⚠️ SITUATION D\'URGENCE':'⚠️ EMERGENCY','📊 RAPPORT DE SITUATION':'📊 SITUATION REPORT','Astuce : touches A, B, C, D pour répondre · Entrée pour continuer':'Tip: press A, B, C, or D to answer · Enter to continue','Reviser mes erreurs':'Review my mistakes','Ton record dans ce mode :':'Your best score in this mode:',' questions ajoutée(s) à ton carnet':' question(s) added to your notebook',' point(s) retiré(s) de ton carnet : bravo !':' point(s) removed from your notebook.'
+        'Colle d’abord le texte de ton cours.':'Paste your lesson first.','L’IA prépare tes questions de révision...':'AI is preparing your review questions…','L\'IA prépare tes questions de révision...':'AI is preparing your review questions…','Impossible de joindre le serveur. Vérifie ta connexion internet (en local : le serveur doit tourner avec node server.js).':'Could not reach the server. Check your internet connection. When running locally, start the server with node server.js.','L’IA n’a pas réussi à préparer le jeu. Réessaie dans un instant.':'AI could not prepare the game. Please try again shortly.','L\'IA n\'a pas réussi à préparer le jeu. Réessaie dans un instant.':'AI could not prepare the game. Please try again shortly.','Le serveur a répondu avec une erreur.':'The server returned an error.','Requête invalide.':'Invalid request.','Une erreur est survenue.':'Something went wrong.','Doucement ! Réessaie dans une minute.':'Too many requests. Please try again in a minute.','Réputation':'Reputation','Bien joué !':'Nice work!','Pas tout à fait…':'Not quite…','Indice :':'Hint:','Plus de cœurs ! La partie est finie.':'Out of hearts! Game over.','Voir le bilan':'View results','Partie terminée':'Game over','Bravo !':'Well done!','Score':'Score','Nouveau badge :':'New badge:','Nouveau record !':'New high score!','Notions travaillées':'Topics covered','À retravailler':'Review these','Rien ! Tout réussi du premier coup 🎉':'Nothing! You got everything right on the first try 🎉','Réviser mes erreurs':'Review my mistakes','Rejouer avec le même cours':'Play again with the same lesson','Nouveau cours':'New lesson','Quitter la partie en cours ?':'Quit the current game?','L’île d’Aventure':'Adventure Island','Salle d’exploration':'Exploration room','Clique pour reprendre ta visite.':'Click to resume exploring.','Cliquer pour explorer l’île':'Click to explore the island','Cliquer pour entrer dans la salle':'Click to enter the room','Cliquer pour reprendre':'Click to resume','Appuie sur E (ou clique) pour ouvrir :':'Press E (or click) to open:','terminé(s)':'complete','Mission':'Mission','Étape':'Stage','Épreuve':'Challenge','Décision':'Decision','À réviser':'To review','📁 DOSSIER CONFIDENTIEL':'📁 CASE FILE','📜 LE RÉCIT':'📜 THE STORY','⚠️ SITUATION D\'URGENCE':'⚠️ EMERGENCY','📊 RAPPORT DE SITUATION':'📊 SITUATION REPORT','Astuce : touches A, B, C, D pour répondre · Entrée pour continuer':'Tip: press A, B, C, or D to answer · Enter to continue','Reviser mes erreurs':'Review my mistakes','Ton record dans ce mode :':'Your best score in this mode:',' questions ajoutée(s) à ton carnet':' question(s) added to your notebook',' point(s) retiré(s) de ton carnet : bravo !':' point(s) removed from your notebook.'
       },
       es: {
-        'Son (touche M)':'Sonido (tecla M)','Couper ou remettre le son':'Silenciar o activar el sonido','📓 Mon carnet (0)':'📓 Mi cuaderno (0)','Transforme ton cours en aventure !':'¡Convierte tu lección en una aventura!','1. Colle ton cours':'1. Pega tu lección','Colle ici le texte de ton cours (200 caractères minimum)... ou glisse un fichier .txt ou .pdf':'Pega aquí el texto de tu lección (mínimo 200 caracteres)… o arrastra un archivo .txt o .pdf','2. Choisis ton mode de jeu':'2. Elige un modo de juego','✅ Île 3D terminée':'✅ Isla 3D lista','🚧 Île 3D bientôt':'🚧 Isla 3D próximamente','Aventure':'Aventura','Explore et avance dans une histoire':'Explora y avanza en una historia','Enquête':'Investigación','Résous un mystère avec des indices':'Resuelve un misterio con pistas','Survie':'Supervivencia','Prends les bonnes décisions':'Toma las decisiones correctas','Stratégie':'Estrategia','Planifie et gère tes ressources':'Planifica y administra tus recursos','🧊 Exploration 3D : désactivée':'🧊 Exploración 3D: desactivada','🧊 Exploration 3D : activée':'🧊 Exploración 3D: activada','Lancer le jeu':'Iniciar juego','⚙️ Options':'⚙️ Opciones','Nombre de questions':'Número de preguntas','3 · rapide':'3 · rápido','5 · complet':'5 · completo','Ton niveau':'Tu nivel','Collège':'Secundaria','Lycée':'Bachillerato','Supérieur':'Universidad','Outils':'Herramientas','📄 Importer un fichier':'📄 Subir archivo',"Cours d'exemple":'Lección de ejemplo','Démo sans IA':'Demostración sin IA','📚 Historique des parties':'📚 Historial de partidas','Effacer l’historique':'Borrar historial','Effacer l\'historique':'Borrar historial','Ça peut prendre jusqu’à une minute.':'Esto puede tardar hasta un minuto.','Ça peut prendre jusqu\'à une minute.':'Esto puede tardar hasta un minuto.','Ça prend du temps... tu peux jouer à la démo sans IA.':'Está tardando. Puedes jugar la demo sin IA.','Jouer à la démo (sans IA)':'Jugar la demo sin IA','Annuler':'Cancelar','Oups…':'¡Vaya!','Réessayer':'Intentar de nuevo','Retour à l’accueil':'Volver al inicio','Retour à l\'accueil':'Volver al inicio','Voir l’explication':'Ver explicación','Cacher l’explication':'Ocultar explicación','Réviser mon carnet':'Repasar mi cuaderno','Vider le carnet':'Vaciar cuaderno','Retour':'Volver','Pour réviser, colle d’abord ton cours sur la page d’accueil (au moins 200 caractères), puis reviens ici.':'Para repasar, pega primero tu lección en la página de inicio (al menos 200 caracteres) y vuelve aquí.','Vider tout ton carnet ?':'¿Vaciar todo el cuaderno?','Effacer ton pseudo, ton XP et tes badges ?':'¿Borrar tu apodo, XP e insignias?','⚔️ Niveau ':'⚔️ Nivel ','🏅 Mes badges':'🏅 Mis insignias','Réinitialiser mon profil':'Restablecer mi perfil','Lecture du fichier...':'Leyendo archivo…','importé':'importado','caractères':'caracteres','Impossible de lire ce fichier (un PDF scanné ou sans internet ne marche pas). Colle le texte à la main.':'No se pudo leer este archivo (los PDF escaneados y el modo sin conexión no son compatibles). Pega el texto.','Ton cours est trop court : colle au moins 200 caractères (quelques phrases).':'Tu lección es demasiado corta. Pega al menos 200 caracteres (unas frases).','L’IA prépare tes questions de révision...':'La IA está preparando tus preguntas de repaso…','L\'IA prépare tes questions de révision...':'La IA está preparando tus preguntas de repaso…','Impossible de joindre le serveur. Vérifie ta connexion internet (en local : le serveur doit tourner avec node server.js).':'No se pudo conectar con el servidor. Comprueba tu conexión a internet.','Le serveur a répondu avec une erreur.':'El servidor respondió con un error.','Requête invalide.':'Solicitud no válida.','Une erreur est survenue.':'Se produjo un error.','Doucement ! Réessaie dans une minute.':'Demasiadas solicitudes. Inténtalo de nuevo en un minuto.','Réputation':'Reputación','Bien joué !':'¡Bien hecho!','Pas tout à fait…':'No exactamente…','Indice :':'Pista:','Plus de cœurs ! La partie est finie.':'¡Te has quedado sin corazones! Fin de la partida.','Voir le bilan':'Ver resultados','Partie terminée':'Partida terminada','Bravo !':'¡Enhorabuena!','Score':'Puntuación','Nouveau record !':'¡Nuevo récord!','Notions travaillées':'Temas practicados','À retravailler':'Para repasar','Rien ! Tout réussi du premier coup 🎉':'¡Nada! Todo correcto a la primera 🎉','Réviser mes erreurs':'Repasar mis errores','Rejouer avec le même cours':'Jugar otra vez con la misma lección','Nouveau cours':'Nueva lección','Quitter la partie en cours ?':'¿Salir de la partida actual?','L’île d’Aventure':'Isla de la Aventura','Salle d’exploration':'Sala de exploración','Clique pour reprendre ta visite.':'Haz clic para continuar explorando.','Cliquer pour explorer l’île':'Haz clic para explorar la isla','Cliquer pour entrer dans la salle':'Haz clic para entrar en la sala','Cliquer pour reprendre':'Haz clic para continuar','Appuie sur E (ou clique) pour ouvrir :':'Pulsa E (o haz clic) para abrir:','terminé(s)':'completadas','Mission':'Misión','Étape':'Etapa','Épreuve':'Desafío','Décision':'Decisión','📁 DOSSIER CONFIDENTIEL':'📁 EXPEDIENTE','📜 LE RÉCIT':'📜 EL RELATO','⚠️ SITUATION D\'URGENCE':'⚠️ EMERGENCIA','📊 RAPPORT DE SITUATION':'📊 INFORME DE SITUACIÓN','Astuce : touches A, B, C, D pour répondre · Entrée pour continuer':'Consejo: pulsa A, B, C o D para responder · Intro para continuar'
+        'Son (touche M)':'Sonido (tecla M)','Couper ou remettre le son':'Silenciar o activar el sonido','📓 Mon carnet (0)':'📓 Mi cuaderno (0)','Transforme ton cours en aventure !':'¡Convierte tu lección en una aventura!','1. Colle ton cours':'1. Pega tu lección','Colle ici le texte de ton cours... ou glisse un fichier .txt ou .pdf':'Pega aquí el texto de tu lección… o arrastra un archivo .txt o .pdf','2. Choisis ton mode de jeu':'2. Elige un modo de juego','✅ Île 3D terminée':'✅ Isla 3D lista','🚧 Île 3D bientôt':'🚧 Isla 3D próximamente','Aventure':'Aventura','Explore et avance dans une histoire':'Explora y avanza en una historia','Enquête':'Investigación','Résous un mystère avec des indices':'Resuelve un misterio con pistas','Survie':'Supervivencia','Prends les bonnes décisions':'Toma las decisiones correctas','Stratégie':'Estrategia','Planifie et gère tes ressources':'Planifica y administra tus recursos','🧊 Exploration 3D : désactivée':'🧊 Exploración 3D: desactivada','🧊 Exploration 3D : activée':'🧊 Exploración 3D: activada','Lancer le jeu':'Iniciar juego','⚙️ Options':'⚙️ Opciones','Nombre de questions':'Número de preguntas','3 · rapide':'3 · rápido','5 · complet':'5 · completo','Ton niveau':'Tu nivel','Collège':'Secundaria','Lycée':'Bachillerato','Supérieur':'Universidad','Outils':'Herramientas','📄 Importer un fichier':'📄 Subir archivo',"Cours d'exemple":'Lección de ejemplo','Démo sans IA':'Demostración sin IA','📚 Historique des parties':'📚 Historial de partidas','Effacer l’historique':'Borrar historial','Effacer l\'historique':'Borrar historial','Ça peut prendre jusqu’à une minute.':'Esto puede tardar hasta un minuto.','Ça peut prendre jusqu\'à une minute.':'Esto puede tardar hasta un minuto.','Ça prend du temps... tu peux jouer à la démo sans IA.':'Está tardando. Puedes jugar la demo sin IA.','Jouer à la démo (sans IA)':'Jugar la demo sin IA','Annuler':'Cancelar','Oups…':'¡Vaya!','Réessayer':'Intentar de nuevo','Retour à l’accueil':'Volver al inicio','Retour à l\'accueil':'Volver al inicio','Voir l’explication':'Ver explicación','Cacher l’explication':'Ocultar explicación','Réviser mon carnet':'Repasar mi cuaderno','Vider le carnet':'Vaciar cuaderno','Retour':'Volver','Pour réviser, colle d’abord ton cours sur la page d’accueil, puis reviens ici.':'Para repasar, pega primero tu lección en la página de inicio y vuelve aquí.','Vider tout ton carnet ?':'¿Vaciar todo el cuaderno?','Effacer ton pseudo, ton XP et tes badges ?':'¿Borrar tu apodo, XP e insignias?','⚔️ Niveau ':'⚔️ Nivel ','🏅 Mes badges':'🏅 Mis insignias','Réinitialiser mon profil':'Restablecer mi perfil','Lecture du fichier...':'Leyendo archivo…','importé':'importado','caractères':'caracteres','Impossible de lire ce fichier (un PDF scanné ou sans internet ne marche pas). Colle le texte à la main.':'No se pudo leer este archivo (los PDF escaneados y el modo sin conexión no son compatibles). Pega el texto.','Colle d’abord le texte de ton cours.':'Pega primero el texto de tu lección.','L’IA prépare tes questions de révision...':'La IA está preparando tus preguntas de repaso…','L\'IA prépare tes questions de révision...':'La IA está preparando tus preguntas de repaso…','Impossible de joindre le serveur. Vérifie ta connexion internet (en local : le serveur doit tourner avec node server.js).':'No se pudo conectar con el servidor. Comprueba tu conexión a internet.','Le serveur a répondu avec une erreur.':'El servidor respondió con un error.','Requête invalide.':'Solicitud no válida.','Une erreur est survenue.':'Se produjo un error.','Doucement ! Réessaie dans une minute.':'Demasiadas solicitudes. Inténtalo de nuevo en un minuto.','Réputation':'Reputación','Bien joué !':'¡Bien hecho!','Pas tout à fait…':'No exactamente…','Indice :':'Pista:','Plus de cœurs ! La partie est finie.':'¡Te has quedado sin corazones! Fin de la partida.','Voir le bilan':'Ver resultados','Partie terminée':'Partida terminada','Bravo !':'¡Enhorabuena!','Score':'Puntuación','Nouveau record !':'¡Nuevo récord!','Notions travaillées':'Temas practicados','À retravailler':'Para repasar','Rien ! Tout réussi du premier coup 🎉':'¡Nada! Todo correcto a la primera 🎉','Réviser mes erreurs':'Repasar mis errores','Rejouer avec le même cours':'Jugar otra vez con la misma lección','Nouveau cours':'Nueva lección','Quitter la partie en cours ?':'¿Salir de la partida actual?','L’île d’Aventure':'Isla de la Aventura','Salle d’exploration':'Sala de exploración','Clique pour reprendre ta visite.':'Haz clic para continuar explorando.','Cliquer pour explorer l’île':'Haz clic para explorar la isla','Cliquer pour entrer dans la salle':'Haz clic para entrar en la sala','Cliquer pour reprendre':'Haz clic para continuar','Appuie sur E (ou clique) pour ouvrir :':'Pulsa E (o haz clic) para abrir:','terminé(s)':'completadas','Mission':'Misión','Étape':'Etapa','Épreuve':'Desafío','Décision':'Decisión','📁 DOSSIER CONFIDENTIEL':'📁 EXPEDIENTE','📜 LE RÉCIT':'📜 EL RELATO','⚠️ SITUATION D\'URGENCE':'⚠️ EMERGENCIA','📊 RAPPORT DE SITUATION':'📊 INFORME DE SITUACIÓN','Astuce : touches A, B, C, D pour répondre · Entrée pour continuer':'Consejo: pulsa A, B, C o D para responder · Intro para continuar'
       }
     };
     Object.assign(TEXTES.en, {
       'Effacer l\'historique':'Clear history','Joueur':'Player','Ton pseudo':'Your nickname','Cours':'Lesson',
-      '🖱️ Souris : regarder · ZQSD / WASD / flèches : marcher · Maj : courir · Espace : sauter':'🖱️ Mouse: look · WASD / arrow keys: move · Shift: run · Space: jump',
+      '🖱️ Souris : regarder · ZQSD / WASD / flèches : marcher · Maj : courir · Espace : sauter':'🖱️ Mouse: look · WASD (ZQSD on AZERTY) / arrow keys: move · Shift: run · Space: jump',
       'E (ou clic) : ouvrir une mission · Tab : grande carte · M : couper le son · Échap : libérer la souris':'E (or click): open a mission · Tab: map · M: mute · Esc: release the mouse',
       '🧊 Exploration 3D : Three.js (MIT), inspirée du first-person-starter-kit d’Augusto Polonio (MIT).':'🧊 3D exploration: Three.js (MIT), inspired by Augusto Polonio’s first-person-starter-kit (MIT).'
     });
     Object.assign(TEXTES.es, {
       '📄 Importer un fichier':'📄 Subir archivo','Effacer l\'historique':'Borrar historial','Joueur':'Jugador','Ton pseudo':'Tu apodo','Cours':'Lección','Ça prend du temps... tu peux jouer à la démo sans IA.':'Está tardando. Puedes jugar la demo sin IA.',
-      'Pour réviser, colle d’abord ton cours sur la page d’accueil (au moins 200 caractères), puis reviens ici.':'Para repasar, pega primero tu lección en la página de inicio (al menos 200 caracteres) y vuelve aquí.',
+      'Pour réviser, colle d’abord ton cours sur la page d’accueil, puis reviens ici.':'Para repasar, pega primero tu lección en la página de inicio y vuelve aquí.',
       '⚔️ Niveau ':'⚔️ Nivel ','🏅 Mes badges':'🏅 Mis insignias','Réinitialiser mon profil':'Restablecer mi perfil','importé':'importado','caractères':'caracteres',
       'Impossible de lire ce fichier (un PDF scanné ou sans internet ne marche pas). Colle le texte à la main.':'No se pudo leer este archivo (los PDF escaneados y el modo sin conexión no son compatibles). Pega el texto.',
       'L\'IA prépare tes questions de révision...':'La IA está preparando tus preguntas de repaso…','Le serveur a répondu avec une erreur.':'El servidor respondió con un error.','Requête invalide.':'Solicitud no válida.','Doucement ! Réessaie dans une minute.':'Demasiadas solicitudes. Inténtalo de nuevo en un minuto.',
-      '🖱️ Souris : regarder · ZQSD / WASD / flèches : marcher · Maj : courir · Espace : sauter':'🖱️ Ratón: mirar · WASD / flechas: caminar · Mayús: correr · Espacio: saltar',
+      '🖱️ Souris : regarder · ZQSD / WASD / flèches : marcher · Maj : courir · Espace : sauter':'🖱️ Ratón: mirar · WASD (ZQSD en AZERTY) / flechas: caminar · Mayús: correr · Espacio: saltar',
       'E (ou clic) : ouvrir une mission · Tab : grande carte · M : couper le son · Échap : libérer la souris':'E (o clic): abrir una misión · Tab: mapa grande · M: silenciar · Esc: liberar el ratón',
       '🧊 Exploration 3D : Three.js (MIT), inspirée du first-person-starter-kit d’Augusto Polonio (MIT).':'🧊 Exploración 3D: Three.js (MIT), inspirada en first-person-starter-kit de Augusto Polonio (MIT).'
     });
     let langue = 'en';
+    let dispositionClavier = 'qwerty';
+    try {
+      dispositionClavier = localStorage.getItem('sq-keyboard') || ((navigator.language || '').toLowerCase().startsWith('fr') ? 'azerty' : 'qwerty');
+    } catch (e) { /* disposition par défaut */ }
     function dateLocale() { return new Date().toLocaleDateString({en:'en-US',fr:'fr-FR',es:'es-ES'}[langue] || 'en-US'); }
+    function actualiserAideClavier() {
+      const textes = {
+        en: dispositionClavier === 'azerty' ? '🖱️ Mouse: look · ZQSD / arrow keys: move · Shift: run · Space: jump' : '🖱️ Mouse: look · WASD / arrow keys: move · Shift: run · Space: jump',
+        fr: dispositionClavier === 'azerty' ? '🖱️ Souris : regarder · ZQSD / flèches : marcher · Maj : courir · Espace : sauter' : '🖱️ Souris : regarder · WASD / flèches : marcher · Maj : courir · Espace : sauter',
+        es: dispositionClavier === 'azerty' ? '🖱️ Ratón: mirar · ZQSD / flechas: caminar · Mayús: correr · Espacio: saltar' : '🖱️ Ratón: mirar · WASD / flechas: caminar · Mayús: correr · Espacio: saltar'
+      };
+      const aide = document.getElementById('aide-mouvement');
+      if (aide) aide.textContent = textes[langue];
+    }
+    function appliquerDispositionClavier(code) {
+      dispositionClavier = code === 'azerty' ? 'azerty' : 'qwerty';
+      try { localStorage.setItem('sq-keyboard', dispositionClavier); } catch (e) {}
+      const select = document.getElementById('select-clavier');
+      if (select) {
+        select.value = dispositionClavier;
+        const libelle = {en:'Keyboard layout',fr:'Disposition du clavier',es:'Distribución del teclado'}[langue];
+        select.title = libelle; select.setAttribute('aria-label', libelle);
+      }
+      actualiserAideClavier();
+    }
     function traduireTexte(texte) {
       if (typeof texte !== 'string') return texte;
       const cle = texte.trim();
@@ -739,6 +766,7 @@
           e.setAttribute(a, traduireTexte(e.dataset['sq'+a]));
         });
       });
+      actualiserAideClavier();
       if (rerender && partie) {
         if (!document.getElementById('ecran-jeu').classList.contains('cache')) afficherMission();
         else if (!document.getElementById('ecran-final').classList.contains('cache')) finale();
@@ -753,6 +781,9 @@
       appliquerLangue(langue, false);
       const s = document.getElementById('select-langue');
       if (s) s.addEventListener('change', () => appliquerLangue(s.value, true));
+      appliquerDispositionClavier(dispositionClavier);
+      const k = document.getElementById('select-clavier');
+      if (k) k.addEventListener('change', () => appliquerDispositionClavier(k.value));
     });
     const observerLangue = new MutationObserver((mutations) => {
       mutations.forEach((m) => {
@@ -929,16 +960,38 @@
     let module3d = null;
     const tactile = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
     let minuteur = null;
-    const CONSEILS = [
-      "Relire un cours le lendemain aide beaucoup plus que le relire 10 fois d'un coup.",
-      "Se tester soi-même (comme ici !) fait mieux retenir que relire.",
-      "Explique la notion à voix haute, comme si tu l'apprenais à quelqu'un.",
-      "Dors bien : le cerveau classe ce que tu as appris pendant la nuit.",
-      "Révise par petites séances de 25 minutes, avec une vraie pause entre deux.",
-      "Se tromper est utile : une erreur corrigée reste mieux en mémoire.",
-      "Commence par ce qui est le plus difficile, quand tu es encore frais.",
-      "Dessine un petit schéma : une image se retient mieux qu'un long texte."
-    ];
+    const CONSEILS = {
+      fr: [
+        "Relire un cours le lendemain aide beaucoup plus que le relire 10 fois d'un coup.",
+        "Se tester soi-même (comme ici !) fait mieux retenir que relire.",
+        "Explique la notion à voix haute, comme si tu l'apprenais à quelqu'un.",
+        "Dors bien : le cerveau classe ce que tu as appris pendant la nuit.",
+        "Révise par petites séances de 25 minutes, avec une vraie pause entre deux.",
+        "Se tromper est utile : une erreur corrigée reste mieux en mémoire.",
+        "Commence par ce qui est le plus difficile, quand tu es encore frais.",
+        "Dessine un petit schéma : une image se retient mieux qu'un long texte."
+      ],
+      en: [
+        "Reviewing a lesson the next day helps more than rereading it many times at once.",
+        "Testing yourself helps you remember more than rereading.",
+        "Explain an idea out loud as if you were teaching someone.",
+        "A good night’s sleep helps your brain organise what you learned.",
+        "Study in short 25-minute sessions and take a real break between them.",
+        "Making a mistake can help: corrected mistakes are easier to remember.",
+        "Start with the hardest topic while your mind is fresh.",
+        "Draw a quick diagram: pictures can be easier to remember than long notes."
+      ],
+      es: [
+        "Repasar una lección al día siguiente ayuda más que releerla muchas veces seguidas.",
+        "Poner a prueba lo que sabes ayuda más a recordarlo que releer.",
+        "Explica la idea en voz alta como si se la enseñaras a alguien.",
+        "Dormir bien ayuda al cerebro a organizar lo que has aprendido.",
+        "Estudia en sesiones cortas de 25 minutos y descansa entre ellas.",
+        "Equivocarse puede ayudar: los errores corregidos se recuerdan mejor.",
+        "Empieza por el tema más difícil cuando tengas la mente despejada.",
+        "Haz un esquema rápido: las imágenes se recuerdan mejor que los textos largos."
+      ]
+    };
     try {
       const sn = localStorage.getItem('sq-niveau');
       if (['college', 'lycee', 'superieur'].indexOf(sn) >= 0) niveau = sn;
@@ -1051,8 +1104,8 @@
 
     function reviserCarnet() {
       const c = lireCarnet();
-      if ($('cours').value.trim().length < 200) {
-        $('msg-carnet').textContent = 'Pour réviser, colle d’abord ton cours sur la page d’accueil (au moins 200 caractères), puis reviens ici.';
+      if (!$('cours').value.trim()) {
+        $('msg-carnet').textContent = 'Pour réviser, colle d’abord ton cours sur la page d’accueil, puis reviens ici.';
         return;
       }
       const choisis = c.slice().sort(function () { return Math.random() - 0.5; }).slice(0, 5).map(function (x) { return x.question; });
@@ -1323,21 +1376,9 @@
     });
     marquerNiveau();
 
-    // vue de jeu : classique ou 3D (la 3D n'est pas proposée sur écran tactile)
-    try { vue3d = !tactile && localStorage.getItem('sq-vue') === '3d'; } catch (e) { /* tant pis */ }
+    // L'exploration 3D est le mode de jeu par défaut sur les appareils avec souris.
+    vue3d = !tactile;
     if (tactile) $('bloc-vue').classList.add('cache');
-    function marquerVue() {
-      const b = $('btn-3d');
-      b.classList.toggle('selectionne', vue3d);
-      b.setAttribute('aria-pressed', vue3d ? 'true' : 'false');
-      b.textContent = vue3d ? '🧊 Exploration 3D : activée' : '🧊 Exploration 3D : désactivée';
-    }
-    $('btn-3d').addEventListener('click', function () {
-      vue3d = !vue3d;
-      try { localStorage.setItem('sq-vue', vue3d ? '3d' : 'classique'); } catch (e) { /* tant pis */ }
-      marquerVue();
-    });
-    marquerVue();
     // pour les tests (?debug) : les menus repliés sont ouverts d'office
     if (location.search.indexOf('debug') >= 0) {
       $('options').open = true;
@@ -1384,17 +1425,18 @@
     function demarrerAttente() {
       arreterAttente();
       let sec = 0;
-      let k = Math.floor(Math.random() * CONSEILS.length);
+      const conseils = CONSEILS[langue] || CONSEILS.en;
+      let k = Math.floor(Math.random() * conseils.length);
       $('compteur-attente').textContent = '0 s';
-      $('conseil-attente').textContent = '💡 ' + CONSEILS[k];
+      $('conseil-attente').textContent = '💡 ' + conseils[k];
       $('msg-long').classList.add('cache');
       $('btn-demo-attente').classList.add('cache');
       minuteur = setInterval(function () {
         sec++;
         $('compteur-attente').textContent = sec + ' s';
         if (sec % 5 === 0) {
-          k = (k + 1) % CONSEILS.length;
-          $('conseil-attente').textContent = '💡 ' + CONSEILS[k];
+          k = (k + 1) % conseils.length;
+          $('conseil-attente').textContent = '💡 ' + conseils[k];
         }
         if (sec >= 90) {
           $('msg-long').classList.remove('cache');
@@ -1437,8 +1479,8 @@
     async function lancerAvec(focus) {
       dernierFocus = focus;
       const cours = $('cours').value.trim();
-      if (cours.length < 200) {
-        $('msg-cours').textContent = 'Ton cours est trop court : colle au moins 200 caractères (quelques phrases).';
+      if (!cours) {
+        $('msg-cours').textContent = 'Colle d’abord le texte de ton cours.';
         montrer('ecran-accueil');
         return;
       }
@@ -1964,3 +2006,4 @@
   </script>
 </body>
 </html>
+

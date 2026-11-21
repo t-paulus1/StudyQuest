@@ -217,9 +217,9 @@ app.get('/api/test', async (req, res) => {
 app.post('/api/generer', async (req, res) => {
   const langue = ['en','fr','es'].includes(req.body && req.body.langue) ? req.body.langue : 'en';
   const erreurs = {
-    en: { key: 'The NVIDIA API key is missing from the .env file.', short: 'Your lesson is too short. Paste at least 200 characters.', failed: 'AI could not prepare the game. Please try again shortly.', auth: 'NVIDIA rejected the API key. Check the key in the .env file, then restart the server.', rate: 'Too many requests were sent to NVIDIA. Wait a minute, then try again.', timeout: 'AI took too long to respond. Please try again or choose a faster model.', general: 'Something went wrong. Please try again shortly.' },
-    fr: { key: 'La clé API NVIDIA est introuvable dans le fichier .env.', short: 'Le cours est trop court : colle au moins 200 caractères.', failed: "L'IA n'a pas réussi à préparer le jeu. Réessaie dans un instant.", auth: 'NVIDIA refuse la clé API. Vérifie ta clé dans le fichier .env, puis relance le serveur.', rate: 'Trop de demandes envoyées à NVIDIA. Attends une minute puis réessaie.', timeout: "L'IA a mis trop de temps à répondre. Réessaie ou choisis un modèle plus rapide.", general: 'Une erreur est survenue. Réessaie dans un instant.' },
-    es: { key: 'Falta la clave API de NVIDIA en el archivo .env.', short: 'La lección es demasiado corta. Pega al menos 200 caracteres.', failed: 'La IA no pudo preparar el juego. Inténtalo de nuevo en breve.', auth: 'NVIDIA rechazó la clave API. Comprueba el archivo .env y reinicia el servidor.', rate: 'Se enviaron demasiadas solicitudes a NVIDIA. Espera un minuto e inténtalo de nuevo.', timeout: 'La IA tardó demasiado en responder. Inténtalo de nuevo o elige un modelo más rápido.', general: 'Se produjo un error. Inténtalo de nuevo en breve.' }
+    en: { key: 'The NVIDIA API key is missing from the .env file.', short: 'Please paste your lesson first.', failed: 'AI could not prepare the game. Please try again shortly.', auth: 'NVIDIA rejected the API key. Check the key in the .env file, then restart the server.', rate: 'Too many requests were sent to NVIDIA. Wait a minute, then try again.', timeout: 'AI took too long to respond. Please try again or choose a faster model.', general: 'Something went wrong. Please try again shortly.' },
+    fr: { key: 'La clé API NVIDIA est introuvable dans le fichier .env.', short: 'Colle d’abord le texte de ton cours.', failed: "L'IA n'a pas réussi à préparer le jeu. Réessaie dans un instant.", auth: 'NVIDIA refuse la clé API. Vérifie ta clé dans le fichier .env, puis relance le serveur.', rate: 'Trop de demandes envoyées à NVIDIA. Attends une minute puis réessaie.', timeout: "L'IA a mis trop de temps à répondre. Réessaie ou choisis un modèle plus rapide.", general: 'Une erreur est survenue. Réessaie dans un instant.' },
+    es: { key: 'Falta la clave API de NVIDIA en el archivo .env.', short: 'Pega primero el texto de tu lección.', failed: 'La IA no pudo preparar el juego. Inténtalo de nuevo en breve.', auth: 'NVIDIA rechazó la clave API. Comprueba el archivo .env y reinicia el servidor.', rate: 'Se enviaron demasiadas solicitudes a NVIDIA. Espera un minuto e inténtalo de nuevo.', timeout: 'La IA tardó demasiado en responder. Inténtalo de nuevo o elige un modelo más rápido.', general: 'Se produjo un error. Inténtalo de nuevo en breve.' }
   }[langue];
   if (!apiKey) {
     return res.status(500).json({ error: erreurs.key });
@@ -232,7 +232,7 @@ app.post('/api/generer', async (req, res) => {
   const body = req.body || {};
   const mode = AMBIANCES[body.mode] ? body.mode : 'enquete';
   let cours = typeof body.cours === 'string' ? body.cours.trim() : '';
-  if (cours.length < 200) {
+  if (!cours) {
     return res.status(400).json({ error: erreurs.short });
   }
   cours = cours.slice(0, 6000);
